@@ -1,0 +1,140 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+
+    /* Option 4: Lujo Natural (mas Galia Luna, menos MuyMila) */
+    --brand-sage: #4b8e80;   /* CTA principal */
+    --brand-coral: #dfa39d;  /* CTA secundario / consultar */
+    --brand-sand: #ddd0ba;   /* apoyo calido / hovers */
+
+    --band-sky: #a9c9c0;     /* header superior */
+    --band-aqua: #ddd0ba;    /* nav secundaria */
+    --hero-rose: #e7d4cf;    /* hero principal */
+    --ticker-lime: #c9d3b0;  /* franja rotativa */
+    --accent-peach: #dfa39d; /* apoyo visual */
+
+    --bg-shell: #ffffff;
+    --bg-soft: #eee8df;
+    --panel: rgba(255, 255, 255, 0.95);
+    --paper: #f1ece4;
+    --ink: #2c2a27;
+    --ink-soft: #878078;
+    --line: rgba(44, 42, 39, 0.11);
+    --line-strong: rgba(44, 42, 39, 0.2);
+    --metal: var(--brand-sage);
+    --focus-ring: rgba(75, 142, 128, 0.34);
+
+    /* backwards-compat variables used by older files still in repo */
+    --border-warm: var(--line);
+    --border-strong: var(--line-strong);
+    --accent-gold: var(--metal);
+    --grain-opacity: 0;
+  }
+
+  * {
+    border-color: var(--line);
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    min-height: 100vh;
+    background:
+      radial-gradient(circle at 0% 0%, rgba(169, 201, 192, 0.08), transparent 34%),
+      radial-gradient(circle at 100% 0%, rgba(223, 163, 157, 0.06), transparent 30%),
+      var(--bg-shell);
+    color: var(--ink);
+    font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::selection {
+    background: rgba(223, 163, 157, 0.22);
+    color: var(--ink);
+  }
+
+  a,
+  button {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  img {
+    user-select: none;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .marquee-track {
+    animation: marquee-scroll 28s linear infinite;
+    will-change: transform;
+  }
+
+  .skeleton-shimmer {
+    position: relative;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--paper) 86%, var(--bg-soft));
+  }
+
+  .skeleton-shimmer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(246, 241, 233, 0.75),
+      transparent
+    );
+    animation: shimmer 1.6s ease-in-out infinite;
+  }
+}
+
+@keyframes shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes marquee-scroll {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .skeleton-shimmer::after {
+    animation: none !important;
+    display: none;
+  }
+
+  .marquee-track {
+    animation: none !important;
+    transform: none !important;
+  }
+}
