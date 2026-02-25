@@ -1,0 +1,2 @@
+export const WHATSAPP_OWNER_NUMBER = "18098488145";
+export const CONTACT_PHONE_DISPLAY = "+1 (809) 848-8145";

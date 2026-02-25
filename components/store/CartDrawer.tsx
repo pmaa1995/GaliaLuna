@@ -17,13 +17,12 @@ import {
   calculateCartTotal,
   useCartStore,
 } from "../../store/cartStore";
+import { WHATSAPP_OWNER_NUMBER } from "../../lib/contact";
 import {
   FALLBACK_PRODUCT_IMAGE,
   PRODUCT_IMAGE_BLUR_DATA_URL,
   formatDOP,
 } from "../../types/product";
-
-const WHATSAPP_OWNER_NUMBER = "18290000000";
 
 function buildWhatsAppMessage(
   items: ReturnType<typeof useCartStore.getState>["items"],

@@ -4,6 +4,7 @@ import { currentUser, auth } from "@clerk/nextjs/server";
 import { CheckCircle2, MessageCircle, ShieldCheck, ShoppingBag, User } from "lucide-react";
 
 import AccountSignOutButton from "../../components/auth/AccountSignOutButton";
+import { WHATSAPP_OWNER_NUMBER } from "../../lib/contact";
 
 const clerkEnabled = Boolean(
   process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY,
@@ -100,7 +101,7 @@ export default async function AccountPage() {
               Seguir comprando
             </Link>
             <a
-              href="https://wa.me/18290000000"
+              href={`https://wa.me/${WHATSAPP_OWNER_NUMBER}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 rounded-full bg-[color:var(--brand-coral)] px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)]"

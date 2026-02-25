@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
+import { WHATSAPP_OWNER_NUMBER } from "../../lib/contact";
 import { calculateCartCount, useCartStore } from "../../store/cartStore";
 import {
   FALLBACK_PRODUCT_IMAGE,
@@ -35,7 +36,6 @@ interface ProductGridProps {
   featuredProduct?: Product;
 }
 
-const WHATSAPP_OWNER_NUMBER = "18290000000";
 const TONES = [
   "bg-[color:var(--bg-shell)]",
   "bg-[color:var(--hero-rose)]",

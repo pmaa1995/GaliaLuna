@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
+import { WHATSAPP_OWNER_NUMBER } from "../../lib/contact";
 import { calculateCartCount, useCartStore } from "../../store/cartStore";
 import {
   FALLBACK_PRODUCT_IMAGE,
@@ -26,8 +27,6 @@ interface ProductDetailViewProps {
   product: Product;
   relatedProducts: Product[];
 }
-
-const WHATSAPP_OWNER_NUMBER = "18290000000";
 
 function buildProductWhatsAppUrl(product: Product) {
   const text = [
