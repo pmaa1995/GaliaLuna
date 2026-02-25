@@ -2,11 +2,7 @@
 
 import CartDrawer from "../components/store/CartDrawer";
 import ProductGrid from "../components/store/ProductGrid";
-import {
-  catalogProducts,
-  getActiveProducts,
-  getResolvedHomeShowcase,
-} from "../lib/catalog";
+import { getHomePageData } from "../lib/catalogData";
 
 const SITE_TITLE = "Galia Luna | Joyería Fina";
 const SITE_DESCRIPTION =
@@ -45,33 +41,32 @@ export const metadata: Metadata = {
 
 export const revalidate = 3600;
 
-const jsonLd = {
-  "@context": "https://schema.org",
-  "@type": "Store",
-  name: "Galia Luna",
-  description: SITE_DESCRIPTION,
-  itemListElement: catalogProducts.map((product, index) => ({
-    "@type": "ListItem",
-    position: index + 1,
-    item: {
-      "@type": "Product",
-      name: product.name,
-      category: product.category,
-      description: product.description,
-      sku: product._id,
-      offers: {
-        "@type": "Offer",
-        priceCurrency: product.currency,
-        price: product.price,
-        availability: "https://schema.org/InStock",
-      },
-    },
-  })),
-};
+export default async function HomePage() {
+  const { allProducts, activeProducts, homeShowcase } = await getHomePageData();
 
-export default function HomePage() {
-  const activeProducts = getActiveProducts();
-  const homeShowcase = getResolvedHomeShowcase(activeProducts);
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Store",
+    name: "Galia Luna",
+    description: SITE_DESCRIPTION,
+    itemListElement: allProducts.map((product, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      item: {
+        "@type": "Product",
+        name: product.name,
+        category: product.category,
+        description: product.description,
+        sku: product._id,
+        offers: {
+          "@type": "Offer",
+          priceCurrency: product.currency,
+          price: product.price,
+          availability: "https://schema.org/InStock",
+        },
+      },
+    })),
+  };
 
   return (
     <main className="relative min-h-screen">
@@ -88,4 +83,3 @@ export default function HomePage() {
     </main>
   );
 }
-

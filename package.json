@@ -8,6 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
+    "studio": "sanity dev",
+    "studio:deploy": "sanity deploy",
     "cf:build": "opennextjs-cloudflare build",
     "cf:dev": "opennextjs-cloudflare build && wrangler dev",
     "cf:deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
@@ -19,18 +21,21 @@
     "framer-motion": "^11.18.2",
     "lucide-react": "^0.469.0",
     "next": "^14.2.25",
+    "next-sanity": "^9.8.61",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "sanity": "^3.99.0",
+    "styled-components": "^6.3.11",
     "zustand": "^5.0.2"
   },
   "devDependencies": {
     "@types/node": "^20.17.10",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
-    "wrangler": "^4.59.2",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "wrangler": "^4.59.2"
   }
 }

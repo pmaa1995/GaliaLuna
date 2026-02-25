@@ -3,11 +3,7 @@ import { notFound } from "next/navigation";
 
 import CartDrawer from "../../../components/store/CartDrawer";
 import ProductDetailView from "../../../components/store/ProductDetailView";
-import {
-  catalogProducts,
-  getProductBySlug,
-  getRelatedProducts,
-} from "../../../lib/catalog";
+import { getActiveProductSlugs, getProductPageData } from "../../../lib/catalogData";
 
 interface ProductPageProps {
   params: {
@@ -15,14 +11,16 @@ interface ProductPageProps {
   };
 }
 
-export function generateStaticParams() {
-  return catalogProducts
-    .filter((product) => product.isActive)
-    .map((product) => ({ slug: product.slug.current }));
+export async function generateStaticParams() {
+  const slugs = await getActiveProductSlugs();
+  return slugs.map((slug) => ({ slug }));
 }
 
-export function generateMetadata({ params }: ProductPageProps): Metadata {
-  const product = getProductBySlug(params.slug);
+export async function generateMetadata({
+  params,
+}: ProductPageProps): Promise<Metadata> {
+  const data = await getProductPageData(params.slug);
+  const product = data?.product;
 
   if (!product) {
     return {
@@ -41,18 +39,19 @@ export function generateMetadata({ params }: ProductPageProps): Metadata {
   };
 }
 
-export default function ProductPage({ params }: ProductPageProps) {
-  const product = getProductBySlug(params.slug);
+export default async function ProductPage({ params }: ProductPageProps) {
+  const data = await getProductPageData(params.slug);
 
-  if (!product || !product.isActive) {
+  if (!data) {
     notFound();
   }
 
-  const related = getRelatedProducts(product, 4);
-
   return (
     <main className="relative min-h-screen">
-      <ProductDetailView product={product} relatedProducts={related} />
+      <ProductDetailView
+        product={data.product}
+        relatedProducts={data.relatedProducts}
+      />
       <CartDrawer />
     </main>
   );

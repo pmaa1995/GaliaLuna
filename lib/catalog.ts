@@ -187,29 +187,46 @@ export const homeSettings: HomeSettings = {
 };
 
 export function getActiveProducts(): Product[] {
-  return catalogProducts.filter((product) => product.isActive);
+  return filterActiveProducts(catalogProducts);
 }
 
 export function getProductBySlug(slug: string): Product | undefined {
-  return catalogProducts.find((product) => product.slug.current === slug);
+  return findProductBySlug(catalogProducts, slug);
 }
 
 export function getRelatedProducts(
   product: Product,
   limit = 4,
 ): Product[] {
-  const sameCategory = catalogProducts.filter(
+  return getRelatedProductsFromList(catalogProducts, product, limit);
+}
+
+export function filterActiveProducts(products: Product[]): Product[] {
+  return products.filter((product) => product.isActive);
+}
+
+export function findProductBySlug(
+  products: Product[],
+  slug: string,
+): Product | undefined {
+  return products.find((product) => product.slug.current === slug);
+}
+
+export function getRelatedProductsFromList(
+  products: Product[],
+  product: Product,
+  limit = 4,
+): Product[] {
+  const activeProducts = filterActiveProducts(products);
+
+  const sameCategory = activeProducts.filter(
     (candidate) =>
-      candidate.isActive &&
-      candidate._id !== product._id &&
-      candidate.category === product.category,
+      candidate._id !== product._id && candidate.category === product.category,
   );
 
-  const fallback = catalogProducts.filter(
+  const fallback = activeProducts.filter(
     (candidate) =>
-      candidate.isActive &&
-      candidate._id !== product._id &&
-      candidate.category !== product.category,
+      candidate._id !== product._id && candidate.category !== product.category,
   );
 
   return [...sameCategory, ...fallback].slice(0, limit);
