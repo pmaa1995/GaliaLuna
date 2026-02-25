@@ -10,6 +10,18 @@
     "NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL": "/mi-cuenta",
     "NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL": "/mi-cuenta"
   },
+  "routes": [
+    {
+      "pattern": "galialuna.com",
+      "custom_domain": true,
+      "zone_name": "galialuna.com"
+    },
+    {
+      "pattern": "www.galialuna.com",
+      "custom_domain": true,
+      "zone_name": "galialuna.com"
+    }
+  ],
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS"
