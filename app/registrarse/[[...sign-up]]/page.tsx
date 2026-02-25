@@ -15,7 +15,7 @@ export default function SignUpPage() {
             Crea tu cuenta
           </h1>
           <p className="mt-4 text-sm leading-7 text-[color:var(--ink-soft)]">
-            Guarda tus datos para futuras compras, agiliza la atencion y revisa
+            Guarda tus datos para futuras compras, agiliza la atención y revisa
             tus pedidos desde una sola cuenta.
           </p>
 
@@ -23,7 +23,7 @@ export default function SignUpPage() {
             {[
               "Correo verificado y acceso protegido.",
               "Tu carrito y compra por WhatsApp siguen siendo simples.",
-              "Puedes cerrar sesion cuando quieras.",
+              "Puedes cerrar sesión cuando quieras.",
             ].map((item) => (
               <div
                 key={item}
@@ -45,7 +45,7 @@ export default function SignUpPage() {
               href="/"
               className="inline-flex items-center rounded-full bg-[color:var(--brand-sage)] px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)]"
             >
-              Ver catalogo
+              Ver catálogo
             </Link>
           </div>
         </section>
@@ -63,19 +63,29 @@ export default function SignUpPage() {
           ) : (
             <div className="rounded-[18px] border border-[color:var(--line)] bg-[color:var(--bg-soft)] p-5 sm:p-6">
               <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--ink-soft)]">
-                Configuracion pendiente
+                Acceso de cuenta
               </p>
               <h2 className="mt-2 [font-family:var(--font-playfair)] text-2xl leading-[0.95] text-[color:var(--ink)]">
-                Falta conectar Clerk
+                Registro disponible pronto
               </h2>
               <p className="mt-3 text-sm leading-7 text-[color:var(--ink-soft)]">
-                Cuando agregues las llaves de Clerk, este formulario quedara
-                activo automaticamente.
+                Mientras activamos esta sección, puedes explorar el catálogo y
+                cerrar tu compra por WhatsApp con la misma atención personalizada.
               </p>
-              <pre className="mt-4 overflow-x-auto rounded-[12px] border border-[color:var(--line)] bg-[color:var(--paper)] p-4 text-xs leading-6 text-[color:var(--ink)]">
-{`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=...
-CLERK_SECRET_KEY=...`}
-              </pre>
+              <div className="mt-5 flex flex-wrap gap-2">
+                <Link
+                  href="/"
+                  className="inline-flex items-center rounded-full border border-[color:var(--line)] bg-[color:var(--paper)] px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)]"
+                >
+                  Ir al catálogo
+                </Link>
+                <Link
+                  href="/iniciar-sesion"
+                  className="inline-flex items-center rounded-full bg-[color:var(--brand-sage)] px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)]"
+                >
+                  Iniciar sesión
+                </Link>
+              </div>
             </div>
           )}
         </section>

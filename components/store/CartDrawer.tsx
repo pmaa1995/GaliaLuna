@@ -34,10 +34,10 @@ function buildWhatsAppMessage(
   );
 
   return [
-    "Hola Galia Luna, quiero confirmar este pedido:",
+    "Hola Galia Luna, quiero confirmar este pedido de la web:",
     ...lines,
     `Total estimado: ${formatDOP(total)}`,
-    "Comparteme por favor pago, entrega y disponibilidad.",
+    "Compárteme por favor formas de pago, entrega y disponibilidad.",
   ].join("\n");
 }
 
@@ -204,13 +204,13 @@ export default function CartDrawer() {
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-[10px] uppercase tracking-[0.16em] text-[color:var(--ink-soft)]">
-                    Pedido actual
+                    Resumen del pedido
                   </p>
                   <h2 className="mt-1 [font-family:var(--font-playfair)] text-[1.7rem] leading-[0.95] tracking-[-0.02em] text-[color:var(--ink)]">
-                    Tu carrito ({totalItems})
+                    Tu pedido ({totalItems})
                   </h2>
                   <p className="mt-1 text-xs text-[color:var(--ink-soft)]">
-                    Envialo por WhatsApp cuando estes listo.
+                    Envíalo por WhatsApp cuando estés listo.
                   </p>
                 </div>
 
@@ -229,11 +229,10 @@ export default function CartDrawer() {
               {safeItems.length === 0 ? (
                 <div className="flex h-full flex-col justify-center border border-[color:var(--line)] bg-[color:var(--paper)] p-5 text-left">
                   <p className="[font-family:var(--font-playfair)] text-[1.5rem] leading-[0.95] tracking-[-0.02em] text-[color:var(--ink)]">
-                    Tu pedido esta vacio
+                    Tu pedido está vacío
                   </p>
                   <p className="mt-2 text-sm leading-7 text-[color:var(--ink-soft)]">
-                    Agrega piezas desde el catalogo y luego confirmalo por
-                    WhatsApp con la vendedora.
+                    Agrega piezas desde el catálogo y confírmalo por WhatsApp cuando quieras.
                   </p>
                 </div>
               ) : (
@@ -254,7 +253,7 @@ export default function CartDrawer() {
             <footer className="border-t border-[color:var(--line)] bg-[color:var(--paper)] px-4 py-4">
               <div className="space-y-2 border border-[color:var(--line)] bg-[color:var(--bg-soft)] p-3">
                 <div className="flex items-center justify-between text-sm text-[color:var(--ink-soft)]">
-                  <span>Items</span>
+                  <span>Piezas</span>
                   <span>{totalItems}</span>
                 </div>
                 <div className="flex items-center justify-between text-sm font-semibold text-[color:var(--ink)]">
@@ -272,7 +271,7 @@ export default function CartDrawer() {
                     className="inline-flex items-center justify-center gap-2 border border-[color:var(--brand-coral)]/35 bg-[color:var(--brand-coral)] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)] transition hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--brand-coral)]/45"
                   >
                     <MessageCircle className="h-3.5 w-3.5" />
-                    Confirmar pedido por WhatsApp
+                    Enviar pedido por WhatsApp
                   </a>
                 ) : (
                   <button
@@ -281,7 +280,7 @@ export default function CartDrawer() {
                     className="inline-flex items-center justify-center gap-2 border border-[color:var(--line)] bg-[color:var(--bg-soft)] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink-soft)]"
                   >
                     <MessageCircle className="h-3.5 w-3.5" />
-                    Confirmar pedido por WhatsApp
+                    Enviar pedido por WhatsApp
                   </button>
                 )}
 

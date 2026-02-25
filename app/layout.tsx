@@ -20,11 +20,11 @@ const inter = Inter({
 export const metadata: Metadata = {
   applicationName: "Galia Luna",
   title: {
-    default: "Galia Luna | Joyeria Fina",
+    default: "Galia Luna | Joyería Fina",
     template: "%s | Galia Luna"
   },
   description:
-    "Tienda online de joyeria fina con piezas minimalistas y checkout personalizado por WhatsApp."
+    "Tienda online de joyería artesanal con piezas hechas a mano y compra guiada por WhatsApp."
 };
 
 export const viewport: Viewport = {

@@ -18,30 +18,24 @@ export default async function AccountPage() {
             Mi cuenta
           </p>
           <h1 className="mt-3 [font-family:var(--font-playfair)] text-[clamp(2rem,4vw,3rem)] leading-[0.9] tracking-[-0.03em] text-[color:var(--ink)]">
-            Activa el acceso seguro
+            Acceso de cuenta disponible pronto
           </h1>
           <p className="mt-4 text-sm leading-7 text-[color:var(--ink-soft)]">
-            Esta pagina queda lista para funcionar cuando agregues las llaves de
-            Clerk en tu entorno local y en Cloudflare.
+            Esta sección estará disponible muy pronto. Mientras tanto, puedes
+            comprar con normalidad desde el catálogo y confirmar tu pedido por WhatsApp.
           </p>
-          <pre className="mt-5 overflow-x-auto rounded-[12px] border border-[color:var(--line)] bg-[color:var(--bg-soft)] p-4 text-xs leading-6 text-[color:var(--ink)]">
-{`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=...
-CLERK_SECRET_KEY=...
-NEXT_PUBLIC_CLERK_SIGN_IN_URL=/iniciar-sesion
-NEXT_PUBLIC_CLERK_SIGN_UP_URL=/registrarse`}
-          </pre>
           <div className="mt-6 flex flex-wrap gap-2">
             <Link
-              href="/iniciar-sesion"
-              className="inline-flex items-center rounded-full bg-[color:var(--brand-coral)] px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)]"
+              href="/"
+              className="inline-flex items-center rounded-full bg-[color:var(--brand-sage)] px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)]"
             >
-              Ir a iniciar sesion
+              Ir al catálogo
             </Link>
             <Link
-              href="/"
+              href="/iniciar-sesion"
               className="inline-flex items-center rounded-full border border-[color:var(--line)] bg-[color:var(--paper)] px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)]"
             >
-              Volver al inicio
+              Iniciar sesión
             </Link>
           </div>
         </section>
@@ -75,7 +69,7 @@ NEXT_PUBLIC_CLERK_SIGN_UP_URL=/registrarse`}
           </h1>
           <p className="mt-4 text-sm leading-7 text-[color:var(--ink-soft)]">
             Tu cuenta te permite guardar tus datos y agilizar futuras compras
-            por WhatsApp con atencion personalizada.
+            por WhatsApp con atención personalizada.
           </p>
 
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
@@ -112,7 +106,7 @@ NEXT_PUBLIC_CLERK_SIGN_UP_URL=/registrarse`}
               className="inline-flex items-center gap-2 rounded-full bg-[color:var(--brand-coral)] px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)]"
             >
               <MessageCircle className="h-3.5 w-3.5" />
-              Hablar con vendedora
+              Hablar con asesora
             </a>
             <AccountSignOutButton />
           </div>
@@ -128,16 +122,16 @@ NEXT_PUBLIC_CLERK_SIGN_UP_URL=/registrarse`}
                 Seguridad
               </p>
               <p className="text-sm font-medium text-[color:var(--ink)]">
-                Acceso protegido por Clerk
+                Acceso seguro
               </p>
             </div>
           </div>
 
           <div className="mt-5 space-y-3">
             {[
-              "Correo verificado y sesion segura.",
+              "Correo verificado y sesión segura.",
               "La web no necesita guardar tarjetas para cerrar compras por WhatsApp.",
-              "Tu cuenta se usa para mejorar seguimiento y atencion.",
+              "Tu cuenta se usa para mejorar seguimiento y atención.",
             ].map((item) => (
               <div
                 key={item}
@@ -151,7 +145,7 @@ NEXT_PUBLIC_CLERK_SIGN_UP_URL=/registrarse`}
 
           <div className="mt-6 rounded-[16px] border border-[color:var(--line)] bg-[color:var(--bg-soft)] p-4">
             <p className="text-[10px] uppercase tracking-[0.16em] text-[color:var(--ink-soft)]">
-              Proximamente
+              Próximamente
             </p>
             <ul className="mt-3 space-y-2 text-sm text-[color:var(--ink)]">
               <li className="flex items-center gap-2">

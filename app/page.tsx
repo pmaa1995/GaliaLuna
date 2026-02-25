@@ -10,7 +10,7 @@ import {
 
 const SITE_TITLE = "Galia Luna | Joyería Fina";
 const SITE_DESCRIPTION =
-  "Tienda online de joyería fina Galia Luna. Anillos, aretes, cadenas, carteras y collares con diseño minimalista y checkout por WhatsApp.";
+  "Tienda online de Galia Luna con joyería artesanal, piezas hechas a mano y atención personalizada por WhatsApp.";
 
 export const metadata: Metadata = {
   title: SITE_TITLE,

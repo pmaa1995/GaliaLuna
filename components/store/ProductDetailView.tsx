@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -31,9 +31,10 @@ const WHATSAPP_OWNER_NUMBER = "18290000000";
 
 function buildProductWhatsAppUrl(product: Product) {
   const text = [
-    "Hola Galia Luna, quiero comprar o consultar esta pieza:",
+    "Hola Galia Luna, me interesa esta pieza:",
     `${product.name} (${product.category})`,
     `Precio: ${formatDOP(product.price)}`,
+    "¿Está disponible?",
   ].join("\n");
 
   return `https://wa.me/${WHATSAPP_OWNER_NUMBER}?text=${encodeURIComponent(text)}`;
@@ -208,11 +209,11 @@ export default function ProductDetailView({
 
               {hasMultipleImages ? (
                 <p className="mt-3 text-xs text-[color:var(--ink-soft)]">
-                  Selecciona otra vista para ver ángulos y detalles de la pieza.
+                  Selecciona otra vista para revisar ángulos y detalles de la pieza.
                 </p>
               ) : (
                 <p className="mt-3 text-xs text-[color:var(--ink-soft)]">
-                  Puedes agregar más fotos del producto para mostrar frente, lateral y detalle.
+                  Si deseas ver más ángulos, escríbenos y te enviamos fotos adicionales por WhatsApp.
                 </p>
               )}
             </div>
@@ -222,7 +223,7 @@ export default function ProductDetailView({
             <div className="border border-[color:var(--line)] bg-[color:var(--paper)] p-4 sm:p-5">
               <p className="text-[10px] uppercase tracking-[0.18em] text-[color:var(--ink-soft)]">
                 {product.category}
-                {product.badge ? ` - ${product.badge}` : ""}
+                {product.badge ? ` · ${product.badge}` : ""}
               </p>
 
               <h1 className="mt-2 [font-family:var(--font-playfair)] text-[2.2rem] leading-[0.92] tracking-[-0.03em] text-[color:var(--ink)]">
@@ -250,7 +251,7 @@ export default function ProductDetailView({
                   className="inline-flex items-center justify-center gap-2 border border-[color:var(--brand-coral)]/35 bg-[color:var(--brand-coral)] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)] transition hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--brand-coral)]/45"
                 >
                   <MessageCircle className="h-3.5 w-3.5" />
-                  Preguntar / Comprar por WhatsApp
+                  Consultar y comprar por WhatsApp
                 </a>
 
                 <button
@@ -274,11 +275,11 @@ export default function ProductDetailView({
 
               <div className="mt-6 border-t border-[color:var(--line)] pt-4">
                 <p className="text-[10px] uppercase tracking-[0.18em] text-[color:var(--ink-soft)]">
-                  Atencion del vendedor
+                  Atención personalizada
                 </p>
                 <p className="mt-2 text-sm leading-7 text-[color:var(--ink)]">
-                  Te ayudamos con combinaciones, disponibilidad y forma de
-                  entrega por WhatsApp.
+                  Te ayudamos a confirmar combinaciones, disponibilidad y forma
+                  de entrega por WhatsApp.
                 </p>
                 <div className="mt-3 flex flex-wrap gap-3">
                   <a
@@ -308,17 +309,17 @@ export default function ProductDetailView({
             <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
               <div>
                 <p className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--ink-soft)]">
-                  Tambien disponibles
+                  También disponibles
                 </p>
                 <h2 className="mt-1 [font-family:var(--font-playfair)] text-[2rem] leading-[0.95] tracking-[-0.03em] text-[color:var(--ink)]">
-                  Otras piezas para comparar
+                  Otras piezas que pueden gustarte
                 </h2>
               </div>
               <Link
                 href="/"
                 className="inline-flex items-center gap-2 border-b border-[color:var(--line)] pb-1 text-[11px] uppercase tracking-[0.16em] text-[color:var(--ink)] transition hover:text-[color:var(--metal)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--focus-ring)]"
               >
-                Ver catalogo completo
+                Ver catálogo completo
                 <ChevronRight className="h-3.5 w-3.5" />
               </Link>
             </div>
@@ -409,3 +410,4 @@ export default function ProductDetailView({
     </div>
   );
 }
+

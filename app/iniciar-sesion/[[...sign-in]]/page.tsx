@@ -12,22 +12,22 @@ export default function SignInPage() {
             Mi cuenta
           </p>
           <h1 className="mt-3 [font-family:var(--font-playfair)] text-[clamp(2rem,4vw,3.2rem)] leading-[0.9] tracking-[-0.03em] text-[color:var(--ink)]">
-            Iniciar sesion
+            Iniciar sesión
           </h1>
           <p className="mt-4 text-sm leading-7 text-[color:var(--ink-soft)]">
-            Accede a tu cuenta para guardar tus datos, revisar pedidos y recibir
-            una atencion mas rapida por WhatsApp.
+            Accede a tu cuenta para guardar tus datos, revisar tus pedidos y
+            recibir una atención más rápida por WhatsApp.
           </p>
 
           <div className="mt-6 grid gap-3 text-sm text-[color:var(--ink)]">
             <div className="rounded-[14px] border border-[color:var(--line)] bg-[color:var(--bg-soft)] p-4">
-              Correo verificado y sesion segura.
+              Correo verificado y sesión segura.
             </div>
             <div className="rounded-[14px] border border-[color:var(--line)] bg-[color:var(--bg-soft)] p-4">
-              Tu compra sigue siendo asistida por una vendedora real.
+              Tu compra sigue siendo atendida por una persona.
             </div>
             <div className="rounded-[14px] border border-[color:var(--line)] bg-[color:var(--bg-soft)] p-4">
-              Puedes seguir comprando sin cuenta desde el catalogo publico.
+              Puedes seguir comprando sin cuenta desde el catálogo público.
             </div>
           </div>
 
@@ -36,7 +36,7 @@ export default function SignInPage() {
               href="/"
               className="inline-flex items-center rounded-full border border-[color:var(--line)] bg-[color:var(--paper)] px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)]"
             >
-              Volver al catalogo
+              Volver al catálogo
             </Link>
             <Link
               href="/registrarse"
@@ -60,19 +60,29 @@ export default function SignInPage() {
           ) : (
             <div className="rounded-[18px] border border-[color:var(--line)] bg-[color:var(--bg-soft)] p-5 sm:p-6">
               <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--ink-soft)]">
-                Configuracion pendiente
+                Acceso de cuenta
               </p>
               <h2 className="mt-2 [font-family:var(--font-playfair)] text-2xl leading-[0.95] text-[color:var(--ink)]">
-                Activa el inicio de sesion con Clerk
+                Esta sección estará disponible pronto
               </h2>
               <p className="mt-3 text-sm leading-7 text-[color:var(--ink-soft)]">
-                Agrega las llaves de Clerk en las variables de entorno para usar
-                este formulario en produccion.
+                Mientras terminamos de activar el acceso de cuenta, puedes seguir
+                comprando con normalidad desde el catálogo y confirmar tu pedido por WhatsApp.
               </p>
-              <pre className="mt-4 overflow-x-auto rounded-[12px] border border-[color:var(--line)] bg-[color:var(--paper)] p-4 text-xs leading-6 text-[color:var(--ink)]">
-{`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=...
-CLERK_SECRET_KEY=...`}
-              </pre>
+              <div className="mt-5 flex flex-wrap gap-2">
+                <Link
+                  href="/"
+                  className="inline-flex items-center rounded-full border border-[color:var(--line)] bg-[color:var(--paper)] px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)]"
+                >
+                  Ir al catálogo
+                </Link>
+                <Link
+                  href="/registrarse"
+                  className="inline-flex items-center rounded-full bg-[color:var(--brand-coral)] px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)]"
+                >
+                  Crear cuenta
+                </Link>
+              </div>
             </div>
           )}
         </section>

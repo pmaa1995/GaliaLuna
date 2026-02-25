@@ -17,7 +17,7 @@ export const catalogProducts: Product[] = [
     name: "Anillo Luna y Sol",
     slug: { current: "anillo-luna-y-sol" },
     category: "Anillos",
-    description: "Anillo delicado con acabado pulido y detalle celestial.",
+    description: "Anillo de acabado pulido con detalle inspirado en la luna y el sol. Ligero y fácil de combinar.",
     price: 400,
     currency: "DOP",
     images: [
@@ -38,7 +38,7 @@ export const catalogProducts: Product[] = [
     name: "Aretes de Lágrimas",
     slug: { current: "aretes-de-lagrimas" },
     category: "Aretes",
-    description: "Aretes de caída suave con brillo sutil para eventos especiales.",
+    description: "Aretes de caída suave con brillo sutil, ideales para elevar un look de día o de noche.",
     price: 700,
     currency: "DOP",
     images: [
@@ -58,7 +58,7 @@ export const catalogProducts: Product[] = [
     name: "Cadena Brisa",
     slug: { current: "cadena-brisa" },
     category: "Cadenas",
-    description: "Cadena liviana de eslabones finos para uso diario elegante.",
+    description: "Cadena ligera de eslabones finos para uso diario, perfecta sola o en capas.",
     price: 950,
     currency: "DOP",
     images: [
@@ -79,7 +79,7 @@ export const catalogProducts: Product[] = [
     name: "Cartera Nácar",
     slug: { current: "cartera-nacar" },
     category: "Carteras",
-    description: "Cartera de mano minimalista con herrajes metálicos premium.",
+    description: "Cartera de mano de líneas limpias con herrajes metálicos y acabado elegante.",
     price: 1800,
     currency: "DOP",
     images: [
@@ -99,7 +99,7 @@ export const catalogProducts: Product[] = [
     name: "Collar Órbita",
     slug: { current: "collar-orbita" },
     category: "Collares",
-    description: "Collar con colgante circular y terminación elegante.",
+    description: "Collar con colgante circular y presencia delicada para uso diario o regalo.",
     price: 1200,
     currency: "DOP",
     images: [
@@ -119,7 +119,7 @@ export const catalogProducts: Product[] = [
     name: "Anillo Aurora",
     slug: { current: "anillo-aurora" },
     category: "Anillos",
-    description: "Anillo fino con silueta limpia para combinar en capas.",
+    description: "Anillo fino de silueta limpia, pensado para combinar con otras piezas.",
     price: 550,
     currency: "DOP",
     images: [
@@ -139,7 +139,7 @@ export const catalogProducts: Product[] = [
     name: "Aretes Perla Noche",
     slug: { current: "aretes-perla-noche" },
     category: "Aretes",
-    description: "Aretes clásicos con acabado sobrio y brillo elegante.",
+    description: "Aretes de estilo clásico con brillo discreto y acabado sobrio.",
     price: 880,
     currency: "DOP",
     images: [
@@ -159,7 +159,7 @@ export const catalogProducts: Product[] = [
     name: "Collar Luna Minimal",
     slug: { current: "collar-luna-minimal" },
     category: "Collares",
-    description: "Collar minimalista con diseño de media luna refinado.",
+    description: "Collar minimalista con motivo de media luna y terminación refinada.",
     price: 990,
     currency: "DOP",
     images: [

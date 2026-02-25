@@ -55,7 +55,7 @@ function waUrl(message: string) {
 
 function productWa(product: Product) {
   return waUrl(
-    `Hola Galia Luna, quiero información sobre ${product.name} (${product.category}) por ${formatDOP(product.price)}.`,
+    `Hola Galia Luna, me interesa ${product.name} (${product.category}) por ${formatDOP(product.price)}. ¿Está disponible?`,
   );
 }
 
@@ -113,7 +113,7 @@ export default function ProductGrid({
   const top3 = filtered.slice(0, 3);
   const rows = filtered.slice(3);
   const stories = [products[2], products[4] ?? products[1]].filter(Boolean) as Product[];
-  const generalWa = waUrl("Hola Galia Luna, quiero ayuda para elegir una pieza.");
+  const generalWa = waUrl("Hola Galia Luna, necesito ayuda para elegir una pieza.");
 
   const onAdd = (product: Product) => {
     addItem(toCartProductSnapshot(product), 1);
@@ -131,7 +131,7 @@ export default function ProductGrid({
               </button>
               <a href={generalWa} target="_blank" rel="noopener noreferrer" className="hidden items-center gap-2 rounded-full border border-[color:var(--paper)]/25 bg-[color:var(--paper)]/10 px-3 py-2 text-[11px] font-medium uppercase tracking-[0.16em] sm:inline-flex">
                 <MessageCircle className="h-3.5 w-3.5" />
-                Vendedora
+                Asesoría
               </a>
             </div>
 
@@ -168,7 +168,7 @@ export default function ProductGrid({
             <div className="flex w-full items-center justify-between gap-3 md:w-auto">
               <div className="inline-flex items-center gap-2 rounded-full bg-[color:var(--paper)]/55 px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.16em] text-[color:var(--ink)]">
                 <Sparkles className="h-3.5 w-3.5" />
-                Compra por WhatsApp
+                Compra guiada por WhatsApp
               </div>
               <a href={generalWa} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-full bg-[color:var(--brand-coral)] px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)]">
                 <MessageCircle className="h-3.5 w-3.5" />
@@ -183,17 +183,17 @@ export default function ProductGrid({
         <section className="overflow-hidden border-x border-b border-[color:var(--line)] bg-[color:var(--bg-shell)]">
           <div className="grid min-h-[420px] lg:grid-cols-[0.9fr_1.2fr_0.9fr]">
             <div className="flex flex-col justify-center border-b border-[color:var(--line)] px-6 py-8 lg:border-b-0 lg:border-r">
-              <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--ink-soft)]">Tienda directa al vendedor</p>
+              <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--ink-soft)]">Compra directa con asesoría</p>
               <h1 className="mt-3 [font-family:var(--font-playfair)] text-[clamp(2rem,4vw,3.3rem)] leading-[0.92] tracking-[-0.03em] text-[color:var(--ink)]">
-                Joyas hechas a mano con una compra clara y acompañamiento personalizado.
+                Joyería hecha a mano con una compra clara y atención personalizada.
               </h1>
               <p className="mt-3 text-sm leading-7 text-[color:var(--ink-soft)]">
-                Explora la colección, agrega tus piezas favoritas al pedido y confirma por WhatsApp con atención personalizada.
+                Explora las piezas disponibles, agrega tus favoritas al pedido y confirma por WhatsApp cuando estés listo.
               </p>
               <div className="mt-5 flex flex-wrap gap-2">
                 <a href={generalWa} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-full bg-[color:var(--brand-coral)] px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)]">
                   <MessageCircle className="h-3.5 w-3.5" />
-                  Hablar con vendedora
+                  Hablar con asesora
                 </a>
                 <a href="#catalogo" className="inline-flex items-center gap-2 rounded-full border border-[color:var(--line)] bg-[color:var(--paper)]/55 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)]">
                   Ver catálogo
@@ -227,7 +227,7 @@ export default function ProductGrid({
                   <p className="mt-1 text-sm text-[color:var(--ink-soft)]">{featured.category} · {formatDOP(featured.price)}</p>
                   <div className="mt-4 grid gap-2">
                     <a href={productWa(featured)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 rounded-full bg-[color:var(--brand-coral)] px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)]">
-                      <MessageCircle className="h-3.5 w-3.5" />Consultar
+                      <MessageCircle className="h-3.5 w-3.5" />Consultar pieza
                     </a>
                     <button type="button" onClick={() => onAdd(featured)} className="inline-flex items-center justify-center gap-2 rounded-full border border-[color:var(--line)] bg-[color:var(--paper)]/65 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)]">
                       <ShoppingBag className="h-3.5 w-3.5" />Agregar al pedido
@@ -236,8 +236,8 @@ export default function ProductGrid({
                 </div>
               ) : null}
               <div className="rounded-[20px] border border-[color:var(--paper)]/45 bg-[color:var(--paper)]/45 p-4 backdrop-blur-sm">
-                <p className="text-[10px] uppercase tracking-[0.16em] text-[color:var(--ink-soft)]">Compra rápida</p>
-                <p className="mt-2 text-sm leading-7 text-[color:var(--ink-soft)]">Precios visibles, carrito opcional y cierre por WhatsApp con atención real.</p>
+                <p className="text-[10px] uppercase tracking-[0.16em] text-[color:var(--ink-soft)]">Compra clara</p>
+                <p className="mt-2 text-sm leading-7 text-[color:var(--ink-soft)]">Precios visibles, pedido opcional y confirmación directa por WhatsApp.</p>
               </div>
             </div>
           </div>
@@ -254,7 +254,7 @@ export default function ProductGrid({
                 {Array.from({ length: 8 }).map((__, i) => (
                   <span key={`${groupIdx}-${i}`} className="inline-flex items-center gap-2">
                     <Sparkles className="h-3.5 w-3.5" />
-                    Joyería fina · WhatsApp · Entrega coordinada
+                    Joyería artesanal · WhatsApp · Entrega coordinada
                   </span>
                 ))}
               </div>
@@ -264,8 +264,8 @@ export default function ProductGrid({
         <section id="catalogo" className="py-10">
           <SectionHeading
             eyebrow="Catálogo"
-            title="Piezas destacadas"
-            description="Explora piezas disponibles con precio visible, detalles claros y acciones directas para comprar o consultar por WhatsApp."
+            title="Piezas disponibles"
+            description="Consulta precios, detalles y disponibilidad. Puedes comprar desde la web o escribirnos por WhatsApp para recibir ayuda."
           />
 
           <div className="mb-5 flex flex-wrap gap-x-5 gap-y-2">
@@ -299,7 +299,7 @@ export default function ProductGrid({
           {filtered.length === 0 ? (
             <div className="border border-[color:var(--line)] bg-[color:var(--paper)] p-6">
               <p className="[font-family:var(--font-playfair)] text-2xl text-[color:var(--ink)]">
-                No hay piezas en esta categoría.
+                No hay piezas disponibles en esta categoría.
               </p>
               <a
                 href={generalWa}
@@ -307,7 +307,7 @@ export default function ProductGrid({
                 rel="noopener noreferrer"
                 className="mt-4 inline-flex items-center gap-2 rounded-full bg-[color:var(--brand-coral)] px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)]"
               >
-                <MessageCircle className="h-3.5 w-3.5" />Consultar al vendedor
+                <MessageCircle className="h-3.5 w-3.5" />Consultar por WhatsApp
               </a>
             </div>
           ) : (
@@ -443,8 +443,8 @@ export default function ProductGrid({
         <section id="colecciones" className="py-2">
           <SectionHeading
             eyebrow="Colecciones"
-            title="Selecciones destacadas de la colección"
-            description="Descubre piezas recomendadas para regalo, uso diario y ocasiones especiales."
+            title="Selecciones para regalar y usar a diario"
+            description="Una guía rápida con piezas recomendadas para combinar, regalar y acompañarte en ocasiones especiales."
           />
           <div className="space-y-8">
             {stories.map((product, index) => {
@@ -462,7 +462,7 @@ export default function ProductGrid({
                   </div>
                   <div className={`${reverse ? "order-1" : ""} flex items-center p-6 sm:p-8`}>
                     <div>
-                      <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--ink-soft)]">Colección curada</p>
+                      <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--ink-soft)]">Selección recomendada</p>
                       <h3 className="mt-2 [font-family:var(--font-playfair)] text-[clamp(1.8rem,3vw,2.6rem)] leading-[0.94] tracking-[-0.03em] text-[color:var(--ink)]">{product.name}</h3>
                       <p className="mt-2 text-sm font-medium text-[color:var(--ink)]">{product.category} · {formatDOP(product.price)}</p>
                       <p className="mt-3 max-w-[45ch] text-sm leading-7 text-[color:var(--ink-soft)]">{product.description}</p>
@@ -489,8 +489,8 @@ export default function ProductGrid({
                 ¿Quieres ayuda para elegir?
               </h3>
               <p className="mt-3 max-w-[50ch] text-sm leading-7 text-[color:var(--ink-soft)]">
-                La web organiza el catálogo; la vendedora te ayuda a comparar piezas,
-                validar disponibilidad y cerrar el pedido por WhatsApp.
+                La web organiza el catálogo; la asesora te ayuda a comparar piezas,
+                confirmar disponibilidad y cerrar tu pedido por WhatsApp.
               </p>
               <div className="mt-5 flex flex-wrap gap-2">
                 <a
@@ -499,7 +499,7 @@ export default function ProductGrid({
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 rounded-full bg-[color:var(--brand-coral)] px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)]"
                 >
-                  <MessageCircle className="h-3.5 w-3.5" />Hablar por WhatsApp
+                  <MessageCircle className="h-3.5 w-3.5" />Escribir por WhatsApp
                 </a>
                 <a
                   href={`tel:+${WHATSAPP_OWNER_NUMBER}`}
@@ -517,15 +517,15 @@ export default function ProductGrid({
               <ul className="mt-4 space-y-3 text-sm leading-7 text-[color:var(--ink)]">
                 <li className="flex items-start gap-3">
                   <MessageCircle className="mt-0.5 h-4 w-4 shrink-0 text-[color:var(--brand-sage)]" />
-                  Confirmación de disponibilidad por WhatsApp.
+                  Confirmamos disponibilidad antes de cerrar el pedido.
                 </li>
                 <li className="flex items-start gap-3">
                   <Package className="mt-0.5 h-4 w-4 shrink-0 text-[color:var(--brand-sage)]" />
-                  Pedido armado en web y revisado contigo.
+                  Revisamos contigo piezas, precio y entrega.
                 </li>
                 <li className="flex items-start gap-3">
                   <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[color:var(--brand-sage)]" />
-                  Coordinación de entrega con seguimiento.
+                  Coordinamos entrega o envío con seguimiento.
                 </li>
               </ul>
             </div>
@@ -536,10 +536,10 @@ export default function ProductGrid({
           <div className="grid sm:grid-cols-2 lg:grid-cols-5">
             {[
               [MapPin, "Entrega", "Coordinada según tu zona en RD."],
-              [Truck, "Envíos", "Opciones locales con confirmación."],
-              [Package, "Pedido", "Web + WhatsApp para cerrar compra."],
-              [ShieldCheck, "Soporte", "Acompañamiento antes de pagar."],
-              [Globe, "Consulta", "Atención online para elegir mejor."],
+              [Truck, "Envíos", "Opciones locales y nacionales disponibles."],
+              [Package, "Pedido", "Arma tu pedido en la web y confírmalo por WhatsApp."],
+              [ShieldCheck, "Soporte", "Acompañamiento antes y después de la compra."],
+              [Globe, "Consulta", "Asesoría online para elegir tu pieza."],
             ].map(([Icon, title, text], idx) => {
               const Cmp = Icon as typeof MapPin;
               return (
@@ -567,7 +567,7 @@ export default function ProductGrid({
                 Galia Luna
               </p>
               <p className="mt-3 text-sm leading-7 text-[color:var(--ink-soft)]">
-                Joyería artesanal hecha a mano con atención personalizada por WhatsApp y compra guiada.
+                Joyería artesanal hecha a mano, con atención cercana y compra guiada por WhatsApp.
               </p>
             </div>
             <div>
