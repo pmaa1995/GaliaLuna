@@ -1,5 +1,7 @@
-import { SignUp } from "@clerk/nextjs";
+﻿import { SignUp } from "@clerk/nextjs";
 import Link from "next/link";
+
+import { clerkFormAppearance } from "../../../components/auth/clerkFormAppearance";
 
 const clerkEnabled = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
 
@@ -12,18 +14,17 @@ export default function SignUpPage() {
             Registro seguro
           </p>
           <h1 className="mt-3 [font-family:var(--font-playfair)] text-[clamp(2rem,4vw,3.2rem)] leading-[0.9] tracking-[-0.03em] text-[color:var(--ink)]">
-            Crea tu cuenta
+            Crea tu cuenta Galia Luna
           </h1>
           <p className="mt-4 text-sm leading-7 text-[color:var(--ink-soft)]">
-            Guarda tus datos para futuras compras, agiliza la atención y revisa
-            tus pedidos desde una sola cuenta.
+            Guarda tus datos para futuras compras y agiliza la atencion cuando vuelvas a escribirnos.
           </p>
 
           <div className="mt-6 space-y-3">
             {[
               "Correo verificado y acceso protegido.",
               "Tu carrito y compra por WhatsApp siguen siendo simples.",
-              "Puedes cerrar sesión cuando quieras.",
+              "Puedes cerrar sesion cuando quieras.",
             ].map((item) => (
               <div
                 key={item}
@@ -45,12 +46,24 @@ export default function SignUpPage() {
               href="/"
               className="inline-flex items-center rounded-full bg-[color:var(--brand-sage)] px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)]"
             >
-              Ver catálogo
+              Ver catalogo
             </Link>
           </div>
         </section>
 
         <section className="border border-[color:var(--line)] bg-[color:var(--paper)] p-4 sm:p-6">
+          <div className="mb-4 border-b border-[color:var(--line)] pb-4 sm:mb-5 sm:pb-5">
+            <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--ink-soft)]">
+              Crear cuenta
+            </p>
+            <h2 className="mt-2 [font-family:var(--font-playfair)] text-2xl leading-[0.95] text-[color:var(--ink)]">
+              Registrate con tu correo
+            </h2>
+            <p className="mt-2 text-sm leading-7 text-[color:var(--ink-soft)]">
+              Tu cuenta sera opcional y solo se usa para mejorar futuras compras.
+            </p>
+          </div>
+
           {clerkEnabled ? (
             <div className="flex justify-center">
               <SignUp
@@ -58,6 +71,7 @@ export default function SignUpPage() {
                 routing="path"
                 signInUrl="/iniciar-sesion"
                 fallbackRedirectUrl="/mi-cuenta"
+                appearance={clerkFormAppearance}
               />
             </div>
           ) : (
@@ -69,21 +83,20 @@ export default function SignUpPage() {
                 Registro disponible pronto
               </h2>
               <p className="mt-3 text-sm leading-7 text-[color:var(--ink-soft)]">
-                Mientras activamos esta sección, puedes explorar el catálogo y
-                cerrar tu compra por WhatsApp con la misma atención personalizada.
+                Mientras activamos esta seccion, puedes explorar el catalogo y cerrar tu compra por WhatsApp con la misma atencion personalizada.
               </p>
               <div className="mt-5 flex flex-wrap gap-2">
                 <Link
                   href="/"
                   className="inline-flex items-center rounded-full border border-[color:var(--line)] bg-[color:var(--paper)] px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)]"
                 >
-                  Ir al catálogo
+                  Ir al catalogo
                 </Link>
                 <Link
                   href="/iniciar-sesion"
                   className="inline-flex items-center rounded-full bg-[color:var(--brand-sage)] px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)]"
                 >
-                  Iniciar sesión
+                  Iniciar sesion
                 </Link>
               </div>
             </div>
