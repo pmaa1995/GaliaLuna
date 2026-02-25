@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { LogOut } from "lucide-react";
 import { useClerk } from "@clerk/nextjs";
@@ -20,3 +20,4 @@ export default function AccountSignOutButton() {
     </button>
   );
 }
+
