@@ -1,0 +1,20 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "main": ".open-next/worker.js",
+  "name": "galia-luna",
+  "compatibility_date": "2026-02-25",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "vars": {
+    "NEXT_PUBLIC_CLERK_SIGN_IN_URL": "/iniciar-sesion",
+    "NEXT_PUBLIC_CLERK_SIGN_UP_URL": "/registrarse",
+    "NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL": "/mi-cuenta",
+    "NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL": "/mi-cuenta"
+  },
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "images": {
+    "binding": "IMAGES"
+  }
+}
