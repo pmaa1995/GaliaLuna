@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Abriendo WhatsApp | Galia Luna</title>
+    <style>
+      :root {
+        color-scheme: light;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background: #f7f4ee;
+        color: #2c2a27;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif;
+      }
+      .panel {
+        width: min(460px, calc(100vw - 32px));
+        border: 1px solid rgba(43, 42, 40, 0.12);
+        background: rgba(255, 255, 255, 0.6);
+        box-shadow: 0 20px 40px rgba(43, 42, 40, 0.12);
+        padding: 24px 20px;
+        text-align: center;
+      }
+      .eyebrow {
+        font-size: 11px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: #878078;
+      }
+      h1 {
+        margin: 10px 0 8px;
+        font-family: Georgia, "Times New Roman", serif;
+        font-weight: 500;
+        font-size: 28px;
+        line-height: 1.05;
+      }
+      p {
+        margin: 0;
+        color: #675f58;
+        line-height: 1.55;
+        font-size: 14px;
+      }
+      a {
+        display: none;
+        margin: 14px auto 0;
+        width: fit-content;
+        border-radius: 999px;
+        background: #dfa39d;
+        color: #2c2a27;
+        text-decoration: none;
+        padding: 10px 14px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+      .show-link a {
+        display: inline-flex;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="panel" id="panel">
+      <div class="eyebrow">Galia Luna</div>
+      <h1>Abriendo WhatsApp</h1>
+      <p id="message">Estamos preparando tu pedido y redirigiendo el mensaje.</p>
+      <a id="manualLink" href="#" rel="noopener noreferrer">Abrir WhatsApp</a>
+    </div>
+    <script>
+      (function () {
+        const params = new URLSearchParams(window.location.search);
+        const target = params.get("to");
+        const panel = document.getElementById("panel");
+        const message = document.getElementById("message");
+        const manualLink = document.getElementById("manualLink");
+
+        if (!target) {
+          message.textContent = "Preparando pedido...";
+          return;
+        }
+
+        manualLink.href = target;
+
+        // If the browser opens WhatsApp in another tab and leaves this one behind,
+        // auto-close this bridge tab after a short delay.
+        setTimeout(function () {
+          try {
+            window.close();
+          } catch (_) {}
+          panel.classList.add("show-link");
+          message.textContent =
+            "Si no se abrió automáticamente, usa el botón para continuar a WhatsApp.";
+        }, 2200);
+
+        setTimeout(function () {
+          window.location.replace(target);
+        }, 80);
+      })();
+    </script>
+  </body>
+  </html>

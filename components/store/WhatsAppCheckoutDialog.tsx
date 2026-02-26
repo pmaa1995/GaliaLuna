@@ -268,37 +268,27 @@ function textareaClassName() {
 function openWhatsAppBridgeTab() {
   if (typeof window === "undefined") return null;
 
-  // IMPORTANT: do not use `noopener` in the bridge popup. Some browsers create
-  // the tab but return `null` when `noopener` is passed, which leaves a
-  // permanent `about:blank` tab and then opens WhatsApp in a second tab.
-  const bridgeTab = window.open("", "_blank");
+  const bridgeTab = window.open("/whatsapp-bridge.html", "_blank");
   if (!bridgeTab) return null;
 
   try {
-    // We can safely sever the opener manually before navigating to WhatsApp.
     bridgeTab.opener = null;
-    bridgeTab.document.title = "Abriendo WhatsApp...";
-    bridgeTab.document.body.style.margin = "0";
-    bridgeTab.document.body.style.fontFamily =
-      '"ui-sans-serif", "Segoe UI", sans-serif';
-    bridgeTab.document.body.style.background = "#f7f4ee";
-    bridgeTab.document.body.style.color = "#2c2a27";
-    bridgeTab.document.body.style.display = "grid";
-    bridgeTab.document.body.style.placeItems = "center";
-    bridgeTab.document.body.innerHTML = `
-      <div style="max-width:420px;padding:24px 20px;text-align:center">
-        <div style="font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#878078">Galia Luna</div>
-        <h1 style="margin:10px 0 8px;font-family:Georgia,serif;font-size:28px;line-height:1.05;font-weight:500">Abriendo WhatsApp</h1>
-        <p style="margin:0;font-size:14px;line-height:1.6;color:#675f58">Estamos preparando tu pedido y redirigiendo el mensaje en una nueva pestaña.</p>
-      </div>
-    `;
   } catch {
-    // Some browsers/extensions restrict writing to the popup. We still keep the handle.
+    // Ignore opener restrictions.
   }
 
   return bridgeTab;
 }
 
+function buildWhatsAppBridgeUrl(targetUrl: string) {
+  if (typeof window === "undefined") {
+    return `/whatsapp-bridge.html?to=${encodeURIComponent(targetUrl)}`;
+  }
+
+  const bridgeUrl = new URL("/whatsapp-bridge.html", window.location.origin);
+  bridgeUrl.searchParams.set("to", targetUrl);
+  return bridgeUrl.toString();
+}
 interface WhatsAppCheckoutDialogProps {
   open: boolean;
   onClose: () => void;
@@ -433,25 +423,7 @@ export default function WhatsAppCheckoutDialog({
 
     if (whatsappTab) {
       try {
-        whatsappTab.location.replace(url);
-        // Some browser/extension combos can leave the bridge popup stranded and
-        // open WhatsApp in a separate tab. If the bridge tab is still same-origin
-        // after a short delay, close it so the user doesn't end up with an
-        // extra blank tab.
-        window.setTimeout(() => {
-          try {
-            if (whatsappTab.closed) return;
-            const currentHref = whatsappTab.location.href;
-            if (
-              currentHref === "about:blank" ||
-              currentHref.startsWith(window.location.origin)
-            ) {
-              whatsappTab.close();
-            }
-          } catch {
-            // Cross-origin access means the redirect likely worked in that tab.
-          }
-        }, 1800);
+        whatsappTab.location.replace(buildWhatsAppBridgeUrl(url));
       } catch {
         window.location.assign(url);
       }
