@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
-import { WHATSAPP_OWNER_NUMBER } from "../../lib/contact";
+import { CALL_OWNER_NUMBER, WHATSAPP_OWNER_NUMBER } from "../../lib/contact";
 import { calculateCartCount, useCartStore } from "../../store/cartStore";
 import {
   FALLBACK_PRODUCT_IMAGE,
@@ -296,7 +296,7 @@ export default function ProductDetailView({
                     Escribir
                   </a>
                   <a
-                    href={`tel:+${WHATSAPP_OWNER_NUMBER}`}
+                    href={`tel:+${CALL_OWNER_NUMBER}`}
                     className="inline-flex items-center gap-2 border-b border-transparent pb-1 text-[11px] uppercase tracking-[0.16em] text-[color:var(--ink-soft)] transition hover:border-[color:var(--line)] hover:text-[color:var(--ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--focus-ring)]"
                   >
                     <Phone className="h-3.5 w-3.5" />

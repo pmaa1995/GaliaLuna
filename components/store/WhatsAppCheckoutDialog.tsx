@@ -10,7 +10,7 @@ import {
 } from "react";
 
 import type { CartItem } from "../../store/cartStore";
-import { CONTACT_PHONE_DISPLAY, WHATSAPP_OWNER_NUMBER } from "../../lib/contact";
+import { WHATSAPP_OWNER_NUMBER, WHATSAPP_PHONE_DISPLAY } from "../../lib/contact";
 import { formatDOP } from "../../types/product";
 
 type CheckoutSource = "cart" | "product";
@@ -430,7 +430,7 @@ export default function WhatsAppCheckoutDialog({
                 {!signedIn ? (
                   <div className="mt-3 rounded-[12px] border border-[color:var(--line)] bg-[color:var(--bg-soft)] p-3">
                     <p className="text-xs leading-6 text-[color:var(--ink-soft)]">
-                      Soporte directo: {CONTACT_PHONE_DISPLAY}
+                      WhatsApp de soporte: {WHATSAPP_PHONE_DISPLAY}
                     </p>
                   </div>
                 ) : null}

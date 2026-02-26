@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
-import { WHATSAPP_OWNER_NUMBER } from "../../lib/contact";
+import { CALL_OWNER_NUMBER, WHATSAPP_OWNER_NUMBER } from "../../lib/contact";
 import { calculateCartCount, useCartStore } from "../../store/cartStore";
 import {
   FALLBACK_PRODUCT_IMAGE,
@@ -502,7 +502,7 @@ export default function ProductGrid({
                   <MessageCircle className="h-3.5 w-3.5" />Escribir por WhatsApp
                 </a>
                 <a
-                  href={`tel:+${WHATSAPP_OWNER_NUMBER}`}
+                  href={`tel:+${CALL_OWNER_NUMBER}`}
                   className="inline-flex items-center gap-2 rounded-full border border-[color:var(--line)] bg-[color:var(--paper)]/60 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)]"
                 >
                   <Phone className="h-3.5 w-3.5" />Llamar
@@ -595,7 +595,7 @@ export default function ProductGrid({
                   <MessageCircle className="h-3.5 w-3.5" />WhatsApp
                 </a>
                 <a
-                  href={`tel:+${WHATSAPP_OWNER_NUMBER}`}
+                  href={`tel:+${CALL_OWNER_NUMBER}`}
                   className="inline-flex items-center gap-2 rounded-full border border-[color:var(--line-strong)] bg-[color:var(--paper)] px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)]"
                 >
                   <Phone className="h-3.5 w-3.5" />Llamar

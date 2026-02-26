@@ -12,7 +12,12 @@ import {
 } from "lucide-react";
 
 import AccountSignOutButton from "../../components/auth/AccountSignOutButton";
-import { CONTACT_PHONE_DISPLAY, WHATSAPP_OWNER_NUMBER } from "../../lib/contact";
+import {
+  CALL_OWNER_NUMBER,
+  CALL_PHONE_DISPLAY,
+  WHATSAPP_OWNER_NUMBER,
+  WHATSAPP_PHONE_DISPLAY,
+} from "../../lib/contact";
 import { saveAccountProfileAction } from "./actions";
 
 type PageSearchParams = {
@@ -186,7 +191,7 @@ export default async function AccountPage({
               <p className="mt-1 text-xs leading-6 text-[color:var(--ink-soft)]">
                 {profile.deliveryPhone
                   ? "Este numero se usa para coordinar la entrega."
-                  : `Soporte de tienda: ${CONTACT_PHONE_DISPLAY}`}
+                  : `WhatsApp de tienda: ${WHATSAPP_PHONE_DISPLAY}`}
               </p>
             </div>
           </div>
@@ -451,7 +456,10 @@ export default async function AccountPage({
                 Contacto directo
               </p>
               <p className="mt-2 text-sm font-medium text-[color:var(--ink)]">
-                {CONTACT_PHONE_DISPLAY}
+                {CALL_PHONE_DISPLAY}
+              </p>
+              <p className="mt-1 text-xs text-[color:var(--ink-soft)]">
+                WhatsApp: {WHATSAPP_PHONE_DISPLAY}
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <a
@@ -464,7 +472,7 @@ export default async function AccountPage({
                   Escribir por WhatsApp
                 </a>
                 <a
-                  href={`tel:+${WHATSAPP_OWNER_NUMBER}`}
+                  href={`tel:+${CALL_OWNER_NUMBER}`}
                   className="inline-flex items-center gap-2 rounded-full border border-[color:var(--line)] bg-[color:var(--paper)] px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)]"
                 >
                   <Phone className="h-3.5 w-3.5" />
