@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 
 import { createWhatsAppOrderRecord } from "../../../../lib/orders/repository";
+import { consumeRateLimit } from "../../../../lib/server/rateLimit";
 import type {
   CheckoutSource,
   CreateWhatsAppOrderPayload,
@@ -9,6 +10,19 @@ import type {
   WhatsAppOrderCustomerInput,
   WhatsAppOrderItemInput,
 } from "../../../../lib/orders/types";
+
+function getClientIp(request: Request) {
+  const cf = request.headers.get("cf-connecting-ip");
+  if (cf) return cf.trim();
+
+  const xff = request.headers.get("x-forwarded-for");
+  if (xff) return xff.split(",")[0]?.trim() || "unknown";
+
+  const realIp = request.headers.get("x-real-ip");
+  if (realIp) return realIp.trim();
+
+  return "unknown";
+}
 
 function asText(value: unknown, max: number) {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
@@ -105,6 +119,30 @@ function parsePayload(value: unknown): CreateWhatsAppOrderPayload | null {
 }
 
 export async function POST(request: Request) {
+  const ip = getClientIp(request);
+  const rate = consumeRateLimit(`orders:whatsapp:${ip}`, {
+    limit: 8,
+    windowMs: 60_000,
+  });
+
+  if (!rate.allowed) {
+    return NextResponse.json<CreateWhatsAppOrderResponse>(
+      {
+        ok: false,
+        persisted: false,
+        orderCode: null,
+        error: "Demasiados intentos. Intenta de nuevo en un momento.",
+      },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(rate.retryAfterSeconds),
+          "X-RateLimit-Remaining": String(rate.remaining),
+        },
+      },
+    );
+  }
+
   let body: unknown;
   try {
     body = await request.json();
@@ -148,6 +186,10 @@ export async function POST(request: Request) {
       ok: true,
       persisted: result.persisted,
       orderCode: result.orderCode,
+    }, {
+      headers: {
+        "X-RateLimit-Remaining": String(rate.remaining),
+      },
     });
   } catch (error) {
     console.error("WhatsApp order persist failed", error);

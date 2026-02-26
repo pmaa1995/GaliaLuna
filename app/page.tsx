@@ -40,16 +40,19 @@ export const metadata: Metadata = {
 };
 
 export const revalidate = 3600;
+const HOME_SCHEMA_PRODUCT_LIMIT = 24;
 
 export default async function HomePage() {
-  const { allProducts, activeProducts, homeShowcase } = await getHomePageData();
+  const { activeProducts, homeShowcase } = await getHomePageData();
 
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Store",
     name: "Galia Luna",
     description: SITE_DESCRIPTION,
-    itemListElement: allProducts.map((product, index) => ({
+    itemListElement: activeProducts
+      .slice(0, HOME_SCHEMA_PRODUCT_LIMIT)
+      .map((product, index) => ({
       "@type": "ListItem",
       position: index + 1,
       item: {
@@ -65,7 +68,7 @@ export default async function HomePage() {
           availability: "https://schema.org/InStock",
         },
       },
-    })),
+      })),
   };
 
   return (

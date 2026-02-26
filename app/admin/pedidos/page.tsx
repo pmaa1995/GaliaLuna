@@ -13,7 +13,7 @@ import {
 import { requireAdminUser } from "../../../lib/admin/auth";
 import {
   getOrderDetailByCode,
-  listOrdersForAdmin,
+  listOrdersForAdminPage,
 } from "../../../lib/orders/adminRepository";
 import { getAllowedNextStatuses } from "../../../lib/orders/status";
 import {
@@ -34,6 +34,7 @@ type PageSearchParams = {
   estado?: string | string[];
   q?: string | string[];
   pedido?: string | string[];
+  page?: string | string[];
 };
 
 function pickFirst(value: string | string[] | undefined) {
@@ -45,6 +46,11 @@ function parseStatusFilter(value: string | undefined): OrderStatus | "all" {
   return (ORDER_STATUS_VALUES as readonly string[]).includes(value)
     ? (value as OrderStatus)
     : "all";
+}
+
+function parsePage(value: string | undefined) {
+  const parsed = Number.parseInt(value ?? "", 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
 }
 
 function statusBadgeClass(status: OrderStatus) {
@@ -106,11 +112,13 @@ function buildOrderSupportUrl(order: Pick<AdminOrderSummary, "orderCode" | "stat
 function buildReturnTo(params: {
   status: OrderStatus | "all";
   q: string;
+  page?: number;
   selectedOrderCode?: string;
 }) {
   const search = new URLSearchParams();
   if (params.status !== "all") search.set("estado", params.status);
   if (params.q.trim()) search.set("q", params.q.trim());
+  if (params.page && params.page > 1) search.set("page", String(params.page));
   if (params.selectedOrderCode) search.set("pedido", params.selectedOrderCode);
 
   const query = search.toString();
@@ -450,20 +458,24 @@ export default async function AdminOrdersPage({
   const statusFilter = parseStatusFilter(rawStatus);
   const q = (pickFirst(searchParams?.q) ?? "").trim();
   const selectedOrderCode = (pickFirst(searchParams?.pedido) ?? "").trim();
+  const page = parsePage(pickFirst(searchParams?.page));
 
-  const [orders, selectedOrder] = await Promise.all([
-    listOrdersForAdmin({
+  const [ordersPage, selectedOrder] = await Promise.all([
+    listOrdersForAdminPage({
       status: statusFilter,
       q,
-      limit: 80,
+      page,
+      pageSize: 30,
     }),
     selectedOrderCode ? getOrderDetailByCode(selectedOrderCode) : Promise.resolve(null),
   ]);
+  const { orders, total, hasNextPage, hasPreviousPage } = ordersPage;
 
-  const returnBase = buildReturnTo({ status: statusFilter, q });
+  const returnBase = buildReturnTo({ status: statusFilter, q, page: ordersPage.page });
   const selectedReturnTo = buildReturnTo({
     status: statusFilter,
     q,
+    page: ordersPage.page,
     selectedOrderCode:
       selectedOrder?.orderCode ?? (selectedOrderCode || undefined),
   });
@@ -558,10 +570,10 @@ export default async function AdminOrdersPage({
           <div className="border border-[color:var(--line)] bg-[color:var(--panel)] p-4 sm:p-5">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
               <p className="text-sm text-[color:var(--ink-soft)]">
-                {orders.length} {orders.length === 1 ? "pedido" : "pedidos"} encontrados
+                {total} {total === 1 ? "pedido" : "pedidos"} encontrados
               </p>
               <p className="text-xs text-[color:var(--ink-soft)]">
-                Estados e inventario se gestionan desde este panel.
+                Estados e inventario se gestionan desde este panel. Se cargan 30 por pagina para mantenerlo rapido.
               </p>
             </div>
 
@@ -579,6 +591,51 @@ export default async function AdminOrdersPage({
                     returnBase={returnBase}
                   />
                 ))}
+              </div>
+            )}
+
+            {(hasPreviousPage || hasNextPage) && (
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-[color:var(--line)] pt-4">
+                <p className="text-xs text-[color:var(--ink-soft)]">
+                  Pagina {ordersPage.page} · {Math.min(total, ordersPage.page * ordersPage.pageSize)} de {total}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {hasPreviousPage ? (
+                    <Link
+                      href={buildReturnTo({
+                        status: statusFilter,
+                        q,
+                        page: ordersPage.page - 1,
+                        selectedOrderCode: selectedOrder?.orderCode,
+                      })}
+                      className="inline-flex items-center rounded-full border border-[color:var(--line)] bg-[color:var(--paper)] px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)]"
+                    >
+                      Anterior
+                    </Link>
+                  ) : (
+                    <span className="inline-flex items-center rounded-full border border-[color:var(--line)]/60 bg-[color:var(--bg-soft)] px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink-soft)]">
+                      Anterior
+                    </span>
+                  )}
+
+                  {hasNextPage ? (
+                    <Link
+                      href={buildReturnTo({
+                        status: statusFilter,
+                        q,
+                        page: ordersPage.page + 1,
+                        selectedOrderCode: selectedOrder?.orderCode,
+                      })}
+                      className="inline-flex items-center rounded-full bg-[color:var(--brand-sage)] px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)]"
+                    >
+                      Siguiente
+                    </Link>
+                  ) : (
+                    <span className="inline-flex items-center rounded-full border border-[color:var(--line)]/60 bg-[color:var(--bg-soft)] px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink-soft)]">
+                      Siguiente
+                    </span>
+                  )}
+                </div>
               </div>
             )}
           </div>

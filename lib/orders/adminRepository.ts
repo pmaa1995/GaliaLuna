@@ -3,6 +3,7 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
 import type {
   AdminOrderDetail,
   AdminOrderItem,
+  AdminOrdersPageResult,
   AdminOrderSummary,
   OrderStatus,
 } from "./types";
@@ -63,6 +64,10 @@ type OrderItemRow = {
   line_total: number;
   currency: string;
   image_url: string | null;
+};
+
+type CountRow = {
+  total: number | string;
 };
 
 async function getOrdersDb(): Promise<OrdersD1DatabaseLike | null> {
@@ -127,15 +132,15 @@ function mapOrderDetail(row: OrderRow, items: AdminOrderItem[]): AdminOrderDetai
   };
 }
 
-export async function listOrdersForAdmin(options?: {
+function toPositiveInt(value: number | undefined, fallback: number) {
+  if (!Number.isFinite(value)) return fallback;
+  return Math.max(1, Math.floor(value ?? fallback));
+}
+
+function buildAdminOrderFilters(options?: {
   status?: OrderStatus | "all";
   q?: string;
-  limit?: number;
 }) {
-  const db = await getOrdersDb();
-  if (!db) return [] satisfies AdminOrderSummary[];
-
-  const limit = Math.max(1, Math.min(options?.limit ?? 50, 200));
   const q = (options?.q ?? "").trim();
   const status = options?.status ?? "all";
 
@@ -156,7 +161,91 @@ export async function listOrdersForAdmin(options?: {
   }
 
   const whereClause = filters.length ? `WHERE ${filters.join(" AND ")}` : "";
+  return { whereClause, bindValues };
+}
 
+export async function listOrdersForAdminPage(options?: {
+  status?: OrderStatus | "all";
+  q?: string;
+  page?: number;
+  pageSize?: number;
+}): Promise<AdminOrdersPageResult> {
+  const db = await getOrdersDb();
+  const pageSize = Math.max(1, Math.min(toPositiveInt(options?.pageSize, 30), 100));
+  const page = toPositiveInt(options?.page, 1);
+  const offset = (page - 1) * pageSize;
+
+  if (!db) {
+    return {
+      orders: [],
+      total: 0,
+      page,
+      pageSize,
+      hasNextPage: false,
+      hasPreviousPage: page > 1,
+    };
+  }
+
+  const { whereClause, bindValues } = buildAdminOrderFilters(options);
+
+  const [countRow, result] = await Promise.all([
+    db
+      .prepare(`SELECT COUNT(*) AS total FROM orders ${whereClause}`)
+      .bind(...bindValues)
+      .first<CountRow>(),
+    db
+      .prepare(
+        `SELECT
+          id,
+          order_code,
+          source,
+          customer_mode,
+          clerk_user_id,
+          full_name,
+          email,
+          phone,
+          province,
+          city,
+          subtotal_amount,
+          currency,
+          item_count,
+          status,
+          created_at,
+          updated_at,
+          inventory_adjusted_at,
+          inventory_adjustment_error
+        FROM orders
+        ${whereClause}
+        ORDER BY created_at DESC
+        LIMIT ? OFFSET ?`,
+      )
+      .bind(...bindValues, pageSize, offset)
+      .all<OrderRow>(),
+  ]);
+
+  const orders = (result.results ?? []).map(mapOrderSummary);
+  const total = Number(countRow?.total ?? 0);
+
+  return {
+    orders,
+    total,
+    page,
+    pageSize,
+    hasNextPage: offset + orders.length < total,
+    hasPreviousPage: page > 1,
+  };
+}
+
+export async function listOrdersForAdmin(options?: {
+  status?: OrderStatus | "all";
+  q?: string;
+  limit?: number;
+}) {
+  const db = await getOrdersDb();
+  if (!db) return [] satisfies AdminOrderSummary[];
+
+  const limit = Math.max(1, Math.min(options?.limit ?? 50, 200));
+  const { whereClause, bindValues } = buildAdminOrderFilters(options);
   const sql = `SELECT
       id,
       order_code,
@@ -358,4 +447,3 @@ export async function markOrderInventoryAdjustment(params: {
     )
     .run();
 }
-

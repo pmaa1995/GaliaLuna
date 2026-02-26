@@ -218,7 +218,18 @@ export default function ProductGrid({
                 ];
                 return (
                   <div key={item._id} className={`absolute overflow-hidden rounded-[18px] border border-[color:var(--paper)]/65 bg-[color:var(--paper)]/50 shadow-[0_16px_36px_rgba(43,42,40,0.14)] ${positions[idx] || positions[0]}`}>
-                    <Image src={img.url} alt={img.alt || item.name} fill priority placeholder="blur" blurDataURL={PRODUCT_IMAGE_BLUR_DATA_URL} sizes="240px" className="object-cover" />
+                    <Image
+                      src={img.url}
+                      alt={img.alt || item.name}
+                      fill
+                      priority={idx === 1}
+                      loading={idx === 1 ? undefined : "lazy"}
+                      fetchPriority={idx === 1 ? "high" : "low"}
+                      placeholder="blur"
+                      blurDataURL={PRODUCT_IMAGE_BLUR_DATA_URL}
+                      sizes="240px"
+                      className="object-cover"
+                    />
                   </div>
                 );
               })}

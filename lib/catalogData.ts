@@ -17,6 +17,7 @@ import {
   homeSettingsQuery,
 } from "../sanity/lib/queries";
 import { mapSanityProduct } from "../sanity/lib/mappers";
+import { SANITY_CACHE_TAGS } from "./cacheTags";
 
 interface SanityHomeSettingsResponse {
   heroProducts?: unknown[];
@@ -81,7 +82,16 @@ function mapSanityHomeShowcase(
 async function fetchSanityProducts(): Promise<Product[]> {
   if (!isSanityEnvironmentConfigured) return [];
 
-  const raw = await sanityClient.fetch<unknown[]>(allProductsQuery, {}, { next: { revalidate: 60 } });
+  const raw = await sanityClient.fetch<unknown[]>(
+    allProductsQuery,
+    {},
+    {
+      next: {
+        revalidate: 60,
+        tags: [SANITY_CACHE_TAGS.products],
+      },
+    },
+  );
   if (!Array.isArray(raw)) return [];
 
   const products = raw
@@ -101,7 +111,12 @@ async function fetchSanityHomeShowcase(
   const raw = await sanityClient.fetch<SanityHomeSettingsResponse | null>(
     homeSettingsQuery,
     {},
-    { next: { revalidate: 60 } },
+    {
+      next: {
+        revalidate: 60,
+        tags: [SANITY_CACHE_TAGS.homeSettings],
+      },
+    },
   );
 
   return mapSanityHomeShowcase(raw, activeProducts);
@@ -161,7 +176,12 @@ export async function getActiveProductSlugs(): Promise<string[]> {
       const rows = await sanityClient.fetch<Array<{ slug?: string }>>(
         activeProductSlugsQuery,
         {},
-        { next: { revalidate: 60 } },
+        {
+          next: {
+            revalidate: 60,
+            tags: [SANITY_CACHE_TAGS.productSlugs],
+          },
+        },
       );
 
       const slugs = (rows ?? [])
@@ -178,4 +198,3 @@ export async function getActiveProductSlugs(): Promise<string[]> {
 
   return filterActiveProducts(catalogProducts).map((product) => product.slug.current);
 }
-

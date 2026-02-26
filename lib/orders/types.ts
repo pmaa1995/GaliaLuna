@@ -77,6 +77,15 @@ export interface AdminOrderSummary {
   inventoryAdjustmentError: string | null;
 }
 
+export interface AdminOrdersPageResult {
+  orders: AdminOrderSummary[];
+  total: number;
+  page: number;
+  pageSize: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
 export interface AdminOrderItem {
   id: number;
   orderId: number;
