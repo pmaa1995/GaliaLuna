@@ -358,6 +358,13 @@ export default function WhatsAppCheckoutDialog({
       saveGuestDraft(normalized);
     }
 
+    // Open the tab synchronously from the click event so browsers don't block it
+    // after the async order-save request completes.
+    const whatsappTab =
+      typeof window !== "undefined"
+        ? window.open("", "_blank", "noopener,noreferrer")
+        : null;
+
     setIsSubmitting(true);
     const saveResult = await saveOrderBeforeWhatsApp({
       items,
@@ -375,7 +382,16 @@ export default function WhatsAppCheckoutDialog({
 
     const url = `https://wa.me/${WHATSAPP_OWNER_NUMBER}?text=${encodeURIComponent(message)}`;
 
-    window.open(url, "_blank", "noopener,noreferrer");
+    if (whatsappTab) {
+      try {
+        whatsappTab.location.href = url;
+      } catch {
+        window.location.assign(url);
+      }
+    } else {
+      // Fallback for popup-blocked browsers.
+      window.location.assign(url);
+    }
     setIsSubmitting(false);
     onSubmitted?.();
     onClose();
