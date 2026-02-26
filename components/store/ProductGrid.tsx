@@ -185,7 +185,7 @@ export default function ProductGrid({
             <div className="flex flex-col justify-center border-b border-[color:var(--line)] px-6 py-8 lg:border-b-0 lg:border-r">
               <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--ink-soft)]">Compra directa con asesoría</p>
               <h1 className="mt-3 [font-family:var(--font-playfair)] text-[clamp(2rem,4vw,3.3rem)] leading-[0.92] tracking-[-0.03em] text-[color:var(--ink)]">
-                Joyería hecha a mano con una compra clara y atención personalizada.
+                Alta joyería artesanal edición limitada.
               </h1>
               <p className="mt-3 text-sm leading-7 text-[color:var(--ink-soft)]">
                 Explora las piezas disponibles, agrega tus favoritas al pedido y confirma por WhatsApp cuando estés listo.
