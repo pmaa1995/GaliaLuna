@@ -20,7 +20,6 @@
     formButtonPrimary:
       "h-11 rounded-[12px] border-0 bg-[color:var(--brand-sage)] text-[color:var(--ink)] shadow-none hover:opacity-95",
     footer: "mt-3 border-t border-[color:var(--line)] bg-transparent pt-3 sm:mt-4 sm:pt-4",
-    footerAction: "hidden",
     footerActionText: "text-[color:var(--ink-soft)]",
     footerActionLink: "font-semibold text-[color:var(--ink)] hover:opacity-80",
     formFieldAction: "text-[color:var(--ink)] hover:opacity-80",

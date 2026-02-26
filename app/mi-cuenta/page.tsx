@@ -203,6 +203,13 @@ export default async function AccountPage({
               <MessageCircle className="h-3.5 w-3.5" />
               Hablar con asesora
             </a>
+            <Link
+              href="/mi-cuenta/seguridad"
+              className="inline-flex items-center gap-2 rounded-full border border-[color:var(--line)] bg-[color:var(--paper)] px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)] transition hover:bg-[color:var(--bg-soft)]"
+            >
+              <ShieldCheck className="h-3.5 w-3.5" />
+              Seguridad y acceso
+            </Link>
             <AccountSignOutButton />
           </div>
 
@@ -431,7 +438,7 @@ export default async function AccountPage({
             </div>
 
             <p className="mt-4 text-sm leading-7 text-[color:var(--ink-soft)]">
-              El soporte y seguimiento se gestionan por WhatsApp con una asesora real. Cuando confirmes un pedido, podras escribir con tu nombre y detalles de la pieza para recibir ayuda.
+              El soporte y seguimiento se gestionan por WhatsApp con una asesora real. Si no recuerdas tu acceso, puedes volver a entrar con tu correo. Si luego activas contrasena, la podras cambiar desde Seguridad y acceso.
             </p>
 
             <div className="mt-4 rounded-[14px] border border-[color:var(--line)] bg-[color:var(--bg-soft)] p-4">
