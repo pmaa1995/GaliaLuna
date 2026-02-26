@@ -1,4 +1,4 @@
-import type { Metadata, Viewport } from "next";
+﻿import type { Metadata, Viewport } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Cormorant_Garamond, Inter } from "next/font/google";
 
@@ -20,21 +20,21 @@ const inter = Inter({
 export const metadata: Metadata = {
   applicationName: "Galia Luna",
   title: {
-    default: "Galia Luna | Joyería Fina",
-    template: "%s | Galia Luna"
+    default: "Galia Luna | Joyería fina",
+    template: "%s | Galia Luna",
   },
   description:
-    "Tienda online de joyería artesanal con piezas hechas a mano y compra guiada por WhatsApp."
+    "Tienda online de joyería artesanal con piezas hechas a mano y compra guiada por WhatsApp.",
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#FFFFFF"
+  themeColor: "#FFFFFF",
 };
 
 export default function RootLayout({
-  children
+  children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {

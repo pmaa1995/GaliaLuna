@@ -18,7 +18,12 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
-import { CALL_OWNER_NUMBER, WHATSAPP_OWNER_NUMBER } from "../../lib/contact";
+import {
+  CALL_OWNER_NUMBER,
+  CALL_PHONE_DISPLAY,
+  WHATSAPP_OWNER_NUMBER,
+  WHATSAPP_PHONE_DISPLAY,
+} from "../../lib/contact";
 import { calculateCartCount, useCartStore } from "../../store/cartStore";
 import {
   FALLBACK_PRODUCT_IMAGE,
@@ -561,7 +566,7 @@ export default function ProductGrid({
         </section>
 
         <footer className="mt-10 border-t border-[color:var(--line)] pb-10 pt-8">
-          <div className="grid gap-8 md:grid-cols-3">
+          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
             <div>
               <p className="[font-family:var(--font-playfair)] text-[1.5rem] tracking-[-0.02em] text-[color:var(--ink)]">
                 Galia Luna
@@ -583,6 +588,17 @@ export default function ProductGrid({
             </div>
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink-soft)]">
+                Políticas
+              </p>
+              <div className="mt-3 grid gap-2 text-sm text-[color:var(--ink)]">
+                <Link href="/privacidad">Privacidad</Link>
+                <Link href="/terminos">Términos</Link>
+                <Link href="/cambios-y-devoluciones">Cambios y devoluciones</Link>
+                <Link href="/envios">Envíos</Link>
+              </div>
+            </div>
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink-soft)]">
                 Contacto directo
               </p>
               <div className="mt-3 grid gap-2">
@@ -594,12 +610,18 @@ export default function ProductGrid({
                 >
                   <MessageCircle className="h-3.5 w-3.5" />WhatsApp
                 </a>
+                <p className="text-xs text-[color:var(--ink-soft)]">
+                  WhatsApp: {WHATSAPP_PHONE_DISPLAY}
+                </p>
                 <a
                   href={`tel:+${CALL_OWNER_NUMBER}`}
                   className="inline-flex items-center gap-2 rounded-full border border-[color:var(--line-strong)] bg-[color:var(--paper)] px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)]"
                 >
                   <Phone className="h-3.5 w-3.5" />Llamar
                 </a>
+                <p className="text-xs text-[color:var(--ink-soft)]">
+                  Llamadas: {CALL_PHONE_DISPLAY}
+                </p>
               </div>
             </div>
           </div>
