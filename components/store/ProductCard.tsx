@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { memo, useRef, useState } from "react";
 
@@ -10,6 +9,7 @@ import {
   formatDOP,
   type Product,
 } from "../../types/product";
+import ProgressiveImage from "./ProgressiveImage";
 
 type ProductPieceVariant = "feature" | "tall" | "standard";
 
@@ -55,7 +55,7 @@ function ProductCardComponent({
             <figure className="relative overflow-hidden rounded-[22px] bg-[color:var(--bg-soft)]">
               <div className="absolute inset-0 z-[1] bg-[radial-gradient(circle_at_20%_15%,rgba(199,164,107,0.08),transparent_58%)]" />
               <div className="relative aspect-[4/5] sm:aspect-[16/10] lg:aspect-[7/6]">
-                <Image
+                <ProgressiveImage
                   src={image.url}
                   alt={image.alt || product.name}
                   fill

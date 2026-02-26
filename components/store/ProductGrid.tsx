@@ -1,6 +1,5 @@
 ﻿"use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import {
   ChevronRight,
@@ -34,6 +33,7 @@ import {
   type CategoryFilter,
   type Product,
 } from "../../types/product";
+import ProgressiveImage from "./ProgressiveImage";
 
 interface ProductGridProps {
   products: Product[];
@@ -218,7 +218,7 @@ export default function ProductGrid({
                 ];
                 return (
                   <div key={item._id} className={`absolute overflow-hidden rounded-[18px] border border-[color:var(--paper)]/65 bg-[color:var(--paper)]/50 shadow-[0_16px_36px_rgba(43,42,40,0.14)] ${positions[idx] || positions[0]}`}>
-                    <Image
+                    <ProgressiveImage
                       src={img.url}
                       alt={img.alt || item.name}
                       fill
@@ -338,7 +338,7 @@ export default function ProductGrid({
                         className={`block border-b border-[color:var(--line)] p-4 ${TONES[index % TONES.length]} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--focus-ring)]`}
                       >
                         <div className="relative mx-auto aspect-[4/5] w-full max-w-[330px] overflow-hidden rounded-[18px] border border-[color:var(--paper)]/60 bg-[color:var(--paper)]/35 shadow-[0_16px_36px_rgba(43,42,40,0.12)]">
-                          <Image
+                          <ProgressiveImage
                             src={img.url}
                             alt={img.alt || product.name}
                             fill
@@ -405,7 +405,7 @@ export default function ProductGrid({
                           className={`block overflow-hidden rounded-[18px] border border-[color:var(--line)] ${TONES[(index + 3) % TONES.length]} p-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--focus-ring)]`}
                         >
                           <div className="relative aspect-[4/5] overflow-hidden rounded-[14px] border border-[color:var(--paper)]/55 bg-[color:var(--paper)]/35">
-                            <Image
+                            <ProgressiveImage
                               src={img.url}
                               alt={img.alt || product.name}
                               fill
@@ -473,7 +473,7 @@ export default function ProductGrid({
                 <article key={product._id} className="grid overflow-hidden border border-[color:var(--line)] bg-[color:var(--paper)] lg:grid-cols-2">
                   <div className={`${reverse ? "order-2" : ""} ${tone} p-6`}>
                     <div className="relative mx-auto aspect-[5/4] w-full max-w-[520px] overflow-hidden rounded-[22px] border border-[color:var(--paper)]/65 bg-[color:var(--paper)]/35 shadow-[0_16px_36px_rgba(43,42,40,0.10)]">
-                      <Image src={img.url} alt={img.alt || product.name} fill placeholder="blur" blurDataURL={PRODUCT_IMAGE_BLUR_DATA_URL} sizes="(max-width: 1024px) 92vw, 44vw" className="object-cover" />
+                      <ProgressiveImage src={img.url} alt={img.alt || product.name} fill placeholder="blur" blurDataURL={PRODUCT_IMAGE_BLUR_DATA_URL} sizes="(max-width: 1024px) 92vw, 44vw" className="object-cover" />
                     </div>
                   </div>
                   <div className={`${reverse ? "order-1" : ""} flex items-center p-6 sm:p-8`}>

@@ -1,7 +1,6 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import Image from "next/image";
 import Link from "next/link";
 import {
   MessageCircle,
@@ -26,6 +25,7 @@ import {
 } from "../../types/product";
 import WhatsAppCheckoutDialog from "./WhatsAppCheckoutDialog";
 import type { WhatsAppCheckoutSubmitResult } from "./WhatsAppCheckoutDialog";
+import ProgressiveImage from "./ProgressiveImage";
 
 function buildWhatsAppMessage(
   items: ReturnType<typeof useCartStore.getState>["items"],
@@ -68,7 +68,7 @@ const CartLineItem = memo(function CartLineItem({
   return (
     <li className="grid grid-cols-[4.2rem_minmax(0,1fr)] gap-3 border border-[color:var(--line)] bg-[color:var(--paper)] p-3">
       <div className="relative h-[5rem] overflow-hidden border border-[color:var(--line)] bg-[color:var(--bg-soft)]">
-        <Image
+        <ProgressiveImage
           src={item.imageUrl || FALLBACK_PRODUCT_IMAGE.url}
           alt={item.imageAlt || item.name}
           fill

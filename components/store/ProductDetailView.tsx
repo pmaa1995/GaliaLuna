@@ -1,6 +1,5 @@
 ﻿"use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import {
   ChevronLeft,
@@ -22,6 +21,7 @@ import {
   toCartProductSnapshot,
   type Product,
 } from "../../types/product";
+import ProgressiveImage from "./ProgressiveImage";
 import WhatsAppCheckoutDialog from "./WhatsAppCheckoutDialog";
 import type { WhatsAppCheckoutSubmitResult } from "./WhatsAppCheckoutDialog";
 
@@ -187,7 +187,7 @@ export default function ProductDetailView({
                         }`}
                       >
                         <div className="relative aspect-square overflow-hidden rounded-[8px] bg-[color:var(--paper)]">
-                          <Image
+                          <ProgressiveImage
                             src={image.url}
                             alt={image.alt || product.name}
                             fill
@@ -205,7 +205,7 @@ export default function ProductDetailView({
                 <div className={`relative overflow-hidden border border-[color:var(--line)] bg-[color:var(--bg-soft)] ${hasMultipleImages ? "order-1" : ""}`}>
                   <div className="mx-auto w-full max-w-[820px]">
                     <div className="relative aspect-[5/4] sm:aspect-[4/3] lg:aspect-[5/4]">
-                      <Image
+                      <ProgressiveImage
                         src={activeImage.url}
                         alt={activeImage.alt || product.name}
                         fill
@@ -380,7 +380,7 @@ export default function ProductDetailView({
                       className="relative block overflow-hidden border border-[color:var(--line)] bg-[color:var(--bg-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--focus-ring)]"
                     >
                       <div className="relative aspect-[4/5]">
-                        <Image
+                        <ProgressiveImage
                           src={image.url}
                           alt={image.alt || item.name}
                           fill

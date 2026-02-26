@@ -1,0 +1,85 @@
+"use client";
+
+import Image, { type ImageProps } from "next/image";
+import { useEffect, useMemo, useState, type SyntheticEvent } from "react";
+
+function joinClasses(...classes: Array<string | false | undefined>) {
+  return classes.filter(Boolean).join(" ");
+}
+
+type ProgressiveImageProps = ImageProps & {
+  skeletonClassName?: string;
+  fallbackSrc?: string;
+};
+
+export default function ProgressiveImage({
+  src,
+  className,
+  style,
+  onError,
+  onLoadingComplete,
+  skeletonClassName,
+  fallbackSrc = "/images/product-placeholder.svg",
+  quality,
+  ...imageProps
+}: ProgressiveImageProps) {
+  const [currentSrc, setCurrentSrc] = useState(src);
+  const [hasFallback, setHasFallback] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  useEffect(() => {
+    setCurrentSrc(src);
+    setHasFallback(false);
+    setIsLoaded(false);
+  }, [src]);
+
+  const mergedStyle = useMemo(
+    () => ({
+      ...style,
+      opacity: isLoaded ? 1 : 0,
+      transition: "opacity 420ms ease",
+    }),
+    [isLoaded, style],
+  );
+
+  const handleError = (event: SyntheticEvent<HTMLImageElement, Event>) => {
+    onError?.(event);
+
+    if (!hasFallback) {
+      const current = typeof currentSrc === "string" ? currentSrc : "";
+      if (current !== fallbackSrc) {
+        setHasFallback(true);
+        setCurrentSrc(fallbackSrc);
+        return;
+      }
+    }
+
+    setIsLoaded(true);
+  };
+
+  return (
+    <>
+      <span
+        aria-hidden
+        className={joinClasses(
+          "pointer-events-none absolute inset-0 skeleton-shimmer transition-opacity duration-500",
+          isLoaded ? "opacity-0" : "opacity-100",
+          skeletonClassName,
+        )}
+      />
+      <Image
+        {...imageProps}
+        src={currentSrc}
+        quality={quality ?? 72}
+        className={className}
+        style={mergedStyle}
+        onError={handleError}
+        onLoadingComplete={(img) => {
+          setIsLoaded(true);
+          onLoadingComplete?.(img);
+        }}
+      />
+    </>
+  );
+}
+

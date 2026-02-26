@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { memo } from "react";
 
@@ -7,6 +6,7 @@ import {
   PRODUCT_IMAGE_BLUR_DATA_URL,
   type Product,
 } from "../../types/product";
+import ProgressiveImage from "./ProgressiveImage";
 
 interface HeroEditorialProps {
   activeCategoryLabel: string;
@@ -81,7 +81,7 @@ function HeroEditorialComponent({
                   <source src={heroVideoSrc} type="video/mp4" />
                 </video>
               ) : (
-                <Image
+                <ProgressiveImage
                   src={image.url}
                   alt={image.alt || "Pieza destacada de Galia Luna"}
                   fill
