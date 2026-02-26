@@ -163,7 +163,11 @@ export default function ProductDetailView({
                 ) : null}
               </div>
 
-              <div className="grid gap-4 lg:grid-cols-[5.25rem_minmax(0,1fr)]">
+              <div
+                className={`grid gap-4 ${
+                  hasMultipleImages ? "lg:grid-cols-[5.25rem_minmax(0,1fr)]" : ""
+                }`}
+              >
                 {hasMultipleImages ? (
                   <div className="order-2 grid grid-cols-4 gap-2 lg:order-1 lg:grid-cols-1 lg:content-start">
                     {gallery.map((image, idx) => (
