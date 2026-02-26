@@ -8,9 +8,9 @@ import {
   Phone,
   ShieldCheck,
   ShoppingBag,
-  User,
 } from "lucide-react";
 
+import AccountOrderHistoryPanel from "../../components/account/AccountOrderHistoryPanel";
 import AccountSignOutButton from "../../components/auth/AccountSignOutButton";
 import { isAdminFromClerkUser } from "../../lib/admin/auth";
 import {
@@ -23,6 +23,7 @@ import { saveAccountProfileAction } from "./actions";
 
 type PageSearchParams = {
   perfil?: string | string[];
+  pedido?: string | string[];
 };
 
 type DeliveryProfile = {
@@ -84,6 +85,12 @@ function getPerfilStatus(searchParams?: PageSearchParams) {
   const value = Array.isArray(raw) ? raw[0] : raw;
   if (value === "guardado" || value === "error") return value;
   return "";
+}
+
+function getPedidoCode(searchParams?: PageSearchParams) {
+  const raw = searchParams?.pedido;
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  return typeof value === "string" ? value.trim() : "";
 }
 
 function inputClassName() {
@@ -148,6 +155,7 @@ export default async function AccountPage({
 
   const profile = readProfileFromMetadata(user?.unsafeMetadata);
   const isAdmin = isAdminFromClerkUser(user);
+  const selectedOrderCode = getPedidoCode(searchParams);
 
   return (
     <main className="mx-auto min-h-[calc(100vh-4rem)] max-w-[1280px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
@@ -511,32 +519,10 @@ export default async function AccountPage({
             </div>
           </section>
 
-          <section className="border border-[color:var(--line)] bg-[color:var(--paper)] p-5 sm:p-7">
-            <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--ink-soft)]">
-              Proximamente
-            </p>
-            <h2 className="mt-2 [font-family:var(--font-playfair)] text-2xl leading-[0.95] text-[color:var(--ink)]">
-              Historial de pedidos y seguimiento
-            </h2>
-            <p className="mt-3 text-sm leading-7 text-[color:var(--ink-soft)]">
-              Esto se activara de forma real cuando registremos pedidos de WhatsApp con codigo y estado (pendiente, confirmado, enviado, entregado). No depende de tener pago con tarjeta para funcionar bien.
-            </p>
-
-            <ul className="mt-4 space-y-2 text-sm text-[color:var(--ink)]">
-              <li className="flex items-start gap-2">
-                <User className="mt-0.5 h-4 w-4 text-[color:var(--brand-sage)]" />
-                Perfil y direccion ya quedan guardados desde hoy.
-              </li>
-              <li className="flex items-start gap-2">
-                <ShoppingBag className="mt-0.5 h-4 w-4 text-[color:var(--brand-sage)]" />
-                Historial de pedidos se puede construir con pedidos por WhatsApp y estados manuales.
-              </li>
-              <li className="flex items-start gap-2">
-                <MessageCircle className="mt-0.5 h-4 w-4 text-[color:var(--brand-sage)]" />
-                Seguimiento y soporte se centralizan con referencia del pedido.
-              </li>
-            </ul>
-          </section>
+          <AccountOrderHistoryPanel
+            clerkUserId={session.userId}
+            selectedOrderCode={selectedOrderCode || undefined}
+          />
         </section>
       </div>
     </main>
