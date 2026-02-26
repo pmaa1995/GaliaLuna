@@ -23,6 +23,7 @@ import {
   type Product,
 } from "../../types/product";
 import WhatsAppCheckoutDialog from "./WhatsAppCheckoutDialog";
+import type { WhatsAppCheckoutSubmitResult } from "./WhatsAppCheckoutDialog";
 
 interface ProductDetailViewProps {
   product: Product;
@@ -54,6 +55,8 @@ export default function ProductDetailView({
 
   const [activeIndex, setActiveIndex] = useState(0);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [lastDirectOrder, setLastDirectOrder] =
+    useState<WhatsAppCheckoutSubmitResult | null>(null);
   const hasMultipleImages = gallery.length > 1;
 
   const activeImage = gallery[activeIndex] ?? FALLBACK_PRODUCT_IMAGE;
@@ -74,6 +77,7 @@ export default function ProductDetailView({
 
   useEffect(() => {
     setActiveIndex(0);
+    setLastDirectOrder(null);
   }, [product._id]);
 
   const goToPrevImage = () => {
@@ -281,6 +285,35 @@ export default function ProductDetailView({
                 </button>
               </div>
 
+              {lastDirectOrder?.ok ? (
+                <div className="mt-4 rounded-[14px] border border-[color:var(--brand-sage)]/35 bg-[color:var(--brand-sage)]/10 p-4">
+                  <p className="text-[10px] uppercase tracking-[0.16em] text-[color:var(--ink-soft)]">
+                    Pedido enviado
+                  </p>
+                  <p className="mt-2 text-sm leading-7 text-[color:var(--ink)]">
+                    Tu pedido fue enviado por WhatsApp y quedo registrado
+                    {lastDirectOrder.orderCode
+                      ? ` con codigo ${lastDirectOrder.orderCode}.`
+                      : "."}
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {lastDirectOrder.orderCode && lastDirectOrder.signedIn ? (
+                      <Link
+                        href={`/mi-cuenta?pedido=${encodeURIComponent(lastDirectOrder.orderCode)}`}
+                        className="inline-flex items-center gap-2 rounded-full border border-[color:var(--line)] bg-[color:var(--paper)] px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)] transition hover:bg-[color:var(--bg-soft)]"
+                      >
+                        Ver pedido en progreso
+                      </Link>
+                    ) : null}
+                    {lastDirectOrder.orderCode && !lastDirectOrder.signedIn ? (
+                      <span className="inline-flex items-center rounded-full border border-[color:var(--line)] bg-[color:var(--paper)] px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink-soft)]">
+                        Codigo: {lastDirectOrder.orderCode}
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
+
               <div className="mt-6 border-t border-[color:var(--line)] pt-4">
                 <p className="text-[10px] uppercase tracking-[0.18em] text-[color:var(--ink-soft)]">
                   Atención personalizada
@@ -421,6 +454,7 @@ export default function ProductDetailView({
         onClose={() => setIsCheckoutOpen(false)}
         items={directCheckoutItems}
         source="product"
+        onSubmitted={(result) => setLastDirectOrder(result)}
       />
     </div>
   );

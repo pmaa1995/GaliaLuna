@@ -270,7 +270,15 @@ interface WhatsAppCheckoutDialogProps {
   onClose: () => void;
   items: CartItem[];
   source: CheckoutSource;
-  onSubmitted?: () => void;
+  onSubmitted?: (result: WhatsAppCheckoutSubmitResult) => void;
+}
+
+export interface WhatsAppCheckoutSubmitResult {
+  ok: boolean;
+  persisted: boolean;
+  orderCode: string | null;
+  signedIn: boolean;
+  source: CheckoutSource;
 }
 
 export default function WhatsAppCheckoutDialog({
@@ -382,6 +390,16 @@ export default function WhatsAppCheckoutDialog({
 
     const url = `https://wa.me/${WHATSAPP_OWNER_NUMBER}?text=${encodeURIComponent(message)}`;
 
+    const submitResult: WhatsAppCheckoutSubmitResult = {
+      ok: Boolean(saveResult?.ok),
+      persisted: Boolean(saveResult?.persisted),
+      orderCode: saveResult?.orderCode ?? null,
+      signedIn,
+      source,
+    };
+
+    onSubmitted?.(submitResult);
+
     if (whatsappTab) {
       try {
         whatsappTab.location.href = url;
@@ -393,7 +411,6 @@ export default function WhatsAppCheckoutDialog({
       window.location.assign(url);
     }
     setIsSubmitting(false);
-    onSubmitted?.();
     onClose();
   };
 

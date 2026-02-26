@@ -25,5 +25,5 @@ export default function middleware(
 }
 
 export const config = {
-  matcher: ["/mi-cuenta(.*)", "/admin(.*)"],
+  matcher: ["/mi-cuenta(.*)", "/admin(.*)", "/api/orders/whatsapp"],
 };

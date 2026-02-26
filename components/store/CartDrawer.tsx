@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import Image from "next/image";
+import Link from "next/link";
 import {
   MessageCircle,
   Minus,
@@ -24,6 +25,7 @@ import {
   formatDOP,
 } from "../../types/product";
 import WhatsAppCheckoutDialog from "./WhatsAppCheckoutDialog";
+import type { WhatsAppCheckoutSubmitResult } from "./WhatsAppCheckoutDialog";
 
 function buildWhatsAppMessage(
   items: ReturnType<typeof useCartStore.getState>["items"],
@@ -139,6 +141,8 @@ export default function CartDrawer() {
   const prefersReducedMotion = useReducedMotion();
   const [hasMounted, setHasMounted] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [lastOrderSubmission, setLastOrderSubmission] =
+    useState<WhatsAppCheckoutSubmitResult | null>(null);
 
   const items = useCartStore((state) => state.items);
   const isOpen = useCartStore((state) => state.isOpen);
@@ -167,6 +171,13 @@ export default function CartDrawer() {
   const safeIsOpen = hasMounted ? isOpen : false;
   const total = calculateCartTotal(safeItems);
   const totalItems = calculateCartCount(safeItems);
+
+  useEffect(() => {
+    if (!safeIsOpen) return;
+    if (safeItems.length > 0) {
+      setLastOrderSubmission(null);
+    }
+  }, [safeIsOpen, safeItems.length]);
 
   return (
     <>
@@ -225,6 +236,37 @@ export default function CartDrawer() {
             </header>
 
             <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+              {lastOrderSubmission?.ok ? (
+                <div className="mb-4 rounded-[16px] border border-[color:var(--brand-sage)]/35 bg-[color:var(--brand-sage)]/12 p-4">
+                  <p className="text-[10px] uppercase tracking-[0.16em] text-[color:var(--ink-soft)]">
+                    Pedido enviado
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-[color:var(--ink)]">
+                    Tu pedido ya fue enviado por WhatsApp y quedo registrado en la web
+                    {lastOrderSubmission.orderCode
+                      ? ` con codigo ${lastOrderSubmission.orderCode}.`
+                      : "."}
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {lastOrderSubmission.orderCode && lastOrderSubmission.signedIn ? (
+                      <Link
+                        href={`/mi-cuenta?pedido=${encodeURIComponent(lastOrderSubmission.orderCode)}`}
+                        onClick={closeCart}
+                        className="inline-flex items-center gap-2 rounded-full border border-[color:var(--line)] bg-[color:var(--paper)] px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)] transition hover:bg-[color:var(--bg-soft)]"
+                      >
+                        Ver pedido en progreso
+                      </Link>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() => setLastOrderSubmission(null)}
+                      className="inline-flex items-center gap-2 rounded-full border border-transparent px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink-soft)] transition hover:border-[color:var(--line)] hover:bg-[color:var(--paper)]"
+                    >
+                      Cerrar aviso
+                    </button>
+                  </div>
+                </div>
+              ) : null}
               {safeItems.length === 0 ? (
                 <div className="flex h-full flex-col justify-center border border-[color:var(--line)] bg-[color:var(--paper)] p-5 text-left">
                   <p className="[font-family:var(--font-playfair)] text-[1.5rem] leading-[0.95] tracking-[-0.02em] text-[color:var(--ink)]">
@@ -301,7 +343,12 @@ export default function CartDrawer() {
         onClose={() => setIsCheckoutOpen(false)}
         items={safeItems}
         source="cart"
-        onSubmitted={closeCart}
+        onSubmitted={(result) => {
+          if (result.ok) {
+            clearCart();
+          }
+          setLastOrderSubmission(result);
+        }}
       />
     </>
   );
