@@ -11,22 +11,14 @@ import {
 
 import type { CartItem } from "../../store/cartStore";
 import { WHATSAPP_OWNER_NUMBER, WHATSAPP_PHONE_DISPLAY } from "../../lib/contact";
+import type {
+  CheckoutSource,
+  CreateWhatsAppOrderResponse,
+  WhatsAppOrderCustomerInput,
+} from "../../lib/orders/types";
 import { formatDOP } from "../../types/product";
 
-type CheckoutSource = "cart" | "product";
-
-type CheckoutFormValues = {
-  fullName: string;
-  email: string;
-  phone: string;
-  province: string;
-  city: string;
-  sector: string;
-  addressLine1: string;
-  addressLine2: string;
-  reference: string;
-  deliveryNotes: string;
-};
+type CheckoutFormValues = WhatsAppOrderCustomerInput;
 
 type GaliaLunaUnsafeProfile = {
   deliveryPhone?: string;
@@ -173,11 +165,13 @@ function buildOrderMessage({
   values,
   source,
   signedIn,
+  orderCode,
 }: {
   items: CartItem[];
   values: CheckoutFormValues;
   source: CheckoutSource;
   signedIn: boolean;
+  orderCode?: string | null;
 }) {
   const normalized = normalizeForm(values);
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -187,6 +181,9 @@ function buildOrderMessage({
 
   const lines = [
     "Hola Galia Luna, quiero confirmar este pedido de la web.",
+    ...(orderCode
+      ? [`Codigo de pedido web: ${orderCode}`, "Estado inicial: Pendiente de confirmacion"]
+      : []),
     "",
     "Productos:",
     ...itemLines,
@@ -222,6 +219,44 @@ function buildOrderMessage({
   return lines.join("\n");
 }
 
+async function saveOrderBeforeWhatsApp({
+  items,
+  values,
+  source,
+}: {
+  items: CartItem[];
+  values: CheckoutFormValues;
+  source: CheckoutSource;
+}): Promise<CreateWhatsAppOrderResponse | null> {
+  try {
+    const response = await fetch("/api/orders/whatsapp", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        source,
+        items: items.map((item) => ({
+          id: item.id,
+          name: item.name,
+          category: item.category,
+          price: item.price,
+          quantity: item.quantity,
+          currency: item.currency,
+          imageUrl: item.imageUrl,
+        })),
+        customer: values,
+      }),
+    });
+
+    const data = (await response.json()) as CreateWhatsAppOrderResponse;
+    return data;
+  } catch (error) {
+    console.error("No se pudo registrar el pedido antes de WhatsApp", error);
+    return null;
+  }
+}
+
 function fieldClassName() {
   return "mt-2 h-11 w-full rounded-[12px] border border-[color:var(--line)] bg-[color:var(--paper)] px-3 text-sm text-[color:var(--ink)] outline-none transition placeholder:text-[color:var(--ink-soft)] focus:border-[color:var(--brand-sage)]";
 }
@@ -248,6 +283,7 @@ export default function WhatsAppCheckoutDialog({
   const [formValues, setFormValues] = useState<CheckoutFormValues>(emptyForm);
   const [error, setError] = useState("");
   const [signedIn, setSignedIn] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const total = useMemo(
     () => items.reduce((sum, item) => sum + item.price * item.quantity, 0),
@@ -296,7 +332,7 @@ export default function WhatsAppCheckoutDialog({
       setFormValues((current) => ({ ...current, [key]: value }));
     };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     const normalized = normalizeForm(formValues);
@@ -322,16 +358,25 @@ export default function WhatsAppCheckoutDialog({
       saveGuestDraft(normalized);
     }
 
+    setIsSubmitting(true);
+    const saveResult = await saveOrderBeforeWhatsApp({
+      items,
+      values: normalized,
+      source,
+    });
+
     const message = buildOrderMessage({
       items,
       values: normalized,
       source,
       signedIn,
+      orderCode: saveResult?.orderCode,
     });
 
     const url = `https://wa.me/${WHATSAPP_OWNER_NUMBER}?text=${encodeURIComponent(message)}`;
 
     window.open(url, "_blank", "noopener,noreferrer");
+    setIsSubmitting(false);
     onSubmitted?.();
     onClose();
   };
@@ -586,16 +631,18 @@ export default function WhatsAppCheckoutDialog({
                 <button
                   type="button"
                   onClick={onClose}
+                  disabled={isSubmitting}
                   className="inline-flex items-center justify-center rounded-full border border-[color:var(--line)] bg-[color:var(--paper)] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)] transition hover:bg-[color:var(--bg-soft)]"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
+                  disabled={isSubmitting}
                   className="inline-flex items-center justify-center gap-2 rounded-full border border-[color:var(--brand-coral)]/35 bg-[color:var(--brand-coral)] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)] transition hover:brightness-95"
                 >
                   <MessageCircle className="h-3.5 w-3.5" />
-                  Enviar por WhatsApp
+                  {isSubmitting ? "Preparando pedido..." : "Enviar por WhatsApp"}
                 </button>
               </div>
             </form>

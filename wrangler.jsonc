@@ -1,35 +1,45 @@
 {
-  "$schema": "node_modules/wrangler/config-schema.json",
-  "main": ".open-next/worker.js",
-  "name": "galia-luna",
-  "compatibility_date": "2026-02-25",
-  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
-  "vars": {
-    "NEXT_PUBLIC_CLERK_SIGN_IN_URL": "/iniciar-sesion",
-    "NEXT_PUBLIC_CLERK_SIGN_UP_URL": "/registrarse",
-    "NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL": "/mi-cuenta",
-    "NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL": "/mi-cuenta",
-    "NEXT_PUBLIC_SANITY_PROJECT_ID": "nepto6np",
-    "NEXT_PUBLIC_SANITY_DATASET": "production",
-    "NEXT_PUBLIC_SANITY_API_VERSION": "2025-02-25"
-  },
-  "routes": [
-    {
-      "pattern": "galialuna.com",
-      "custom_domain": true,
-      "zone_name": "galialuna.com"
-    },
-    {
-      "pattern": "www.galialuna.com",
-      "custom_domain": true,
-      "zone_name": "galialuna.com"
-    }
-  ],
-  "assets": {
-    "directory": ".open-next/assets",
-    "binding": "ASSETS"
-  },
-  "images": {
-    "binding": "IMAGES"
-  }
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"main": ".open-next/worker.js",
+	"name": "galia-luna",
+	"compatibility_date": "2026-02-25",
+	"compatibility_flags": [
+		"nodejs_compat",
+		"global_fetch_strictly_public"
+	],
+	"vars": {
+		"NEXT_PUBLIC_CLERK_SIGN_IN_URL": "/iniciar-sesion",
+		"NEXT_PUBLIC_CLERK_SIGN_UP_URL": "/registrarse",
+		"NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL": "/mi-cuenta",
+		"NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL": "/mi-cuenta",
+		"NEXT_PUBLIC_SANITY_PROJECT_ID": "nepto6np",
+		"NEXT_PUBLIC_SANITY_DATASET": "production",
+		"NEXT_PUBLIC_SANITY_API_VERSION": "2025-02-25"
+	},
+	"routes": [
+		{
+			"pattern": "galialuna.com",
+			"custom_domain": true,
+			"zone_name": "galialuna.com"
+		},
+		{
+			"pattern": "www.galialuna.com",
+			"custom_domain": true,
+			"zone_name": "galialuna.com"
+		}
+	],
+	"assets": {
+		"directory": ".open-next/assets",
+		"binding": "ASSETS"
+	},
+	"images": {
+		"binding": "IMAGES"
+	},
+	"d1_databases": [
+		{
+			"binding": "GALIA_LUNA_DB",
+			"database_name": "galia-luna-orders",
+			"database_id": "a602fbb2-03a6-49ec-80f9-ef76f0ae2c20"
+		}
+	]
 }
