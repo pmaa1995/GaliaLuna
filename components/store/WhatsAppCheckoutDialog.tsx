@@ -265,6 +265,35 @@ function textareaClassName() {
   return "mt-2 w-full rounded-[12px] border border-[color:var(--line)] bg-[color:var(--paper)] px-3 py-2.5 text-sm text-[color:var(--ink)] outline-none transition placeholder:text-[color:var(--ink-soft)] focus:border-[color:var(--brand-sage)]";
 }
 
+function openWhatsAppBridgeTab() {
+  if (typeof window === "undefined") return null;
+
+  const bridgeTab = window.open("", "_blank", "noopener");
+  if (!bridgeTab) return null;
+
+  try {
+    bridgeTab.document.title = "Abriendo WhatsApp...";
+    bridgeTab.document.body.style.margin = "0";
+    bridgeTab.document.body.style.fontFamily =
+      '"ui-sans-serif", "Segoe UI", sans-serif';
+    bridgeTab.document.body.style.background = "#f7f4ee";
+    bridgeTab.document.body.style.color = "#2c2a27";
+    bridgeTab.document.body.style.display = "grid";
+    bridgeTab.document.body.style.placeItems = "center";
+    bridgeTab.document.body.innerHTML = `
+      <div style="max-width:420px;padding:24px 20px;text-align:center">
+        <div style="font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#878078">Galia Luna</div>
+        <h1 style="margin:10px 0 8px;font-family:Georgia,serif;font-size:28px;line-height:1.05;font-weight:500">Abriendo WhatsApp</h1>
+        <p style="margin:0;font-size:14px;line-height:1.6;color:#675f58">Estamos preparando tu pedido y redirigiendo el mensaje en una nueva pestaña.</p>
+      </div>
+    `;
+  } catch {
+    // Some browsers/extensions restrict writing to the popup. We still keep the handle.
+  }
+
+  return bridgeTab;
+}
+
 interface WhatsAppCheckoutDialogProps {
   open: boolean;
   onClose: () => void;
@@ -366,12 +395,9 @@ export default function WhatsAppCheckoutDialog({
       saveGuestDraft(normalized);
     }
 
-    // Open the tab synchronously from the click event so browsers don't block it
+    // Open a bridge tab synchronously from the click event so browsers don't block it
     // after the async order-save request completes.
-    const whatsappTab =
-      typeof window !== "undefined"
-        ? window.open("", "_blank", "noopener,noreferrer")
-        : null;
+    const whatsappTab = openWhatsAppBridgeTab();
 
     setIsSubmitting(true);
     const saveResult = await saveOrderBeforeWhatsApp({
@@ -388,7 +414,7 @@ export default function WhatsAppCheckoutDialog({
       orderCode: saveResult?.orderCode,
     });
 
-    const url = `https://wa.me/${WHATSAPP_OWNER_NUMBER}?text=${encodeURIComponent(message)}`;
+    const url = `https://api.whatsapp.com/send?phone=${WHATSAPP_OWNER_NUMBER}&text=${encodeURIComponent(message)}`;
 
     const submitResult: WhatsAppCheckoutSubmitResult = {
       ok: Boolean(saveResult?.ok),
@@ -402,13 +428,38 @@ export default function WhatsAppCheckoutDialog({
 
     if (whatsappTab) {
       try {
-        whatsappTab.location.href = url;
+        whatsappTab.location.replace(url);
+        // Some browser/extension combos can leave the bridge popup stranded and
+        // open WhatsApp in a separate tab. If the bridge tab is still same-origin
+        // after a short delay, close it so the user doesn't end up with an
+        // extra blank tab.
+        window.setTimeout(() => {
+          try {
+            if (whatsappTab.closed) return;
+            const currentHref = whatsappTab.location.href;
+            if (
+              currentHref === "about:blank" ||
+              currentHref.startsWith(window.location.origin)
+            ) {
+              whatsappTab.close();
+            }
+          } catch {
+            // Cross-origin access means the redirect likely worked in that tab.
+          }
+        }, 1800);
       } catch {
-        window.location.assign(url);
+        const fallbackTab = window.open(url, "_blank", "noopener");
+        if (!fallbackTab) {
+          window.location.assign(url);
+        }
       }
     } else {
-      // Fallback for popup-blocked browsers.
-      window.location.assign(url);
+      // Fallback for popup-blocked browsers. Try a direct tab open first to keep the
+      // store page visible; if blocked, navigate in the same tab as last resort.
+      const fallbackTab = window.open(url, "_blank", "noopener");
+      if (!fallbackTab) {
+        window.location.assign(url);
+      }
     }
     setIsSubmitting(false);
     onClose();
