@@ -22,6 +22,7 @@ import {
   toCartProductSnapshot,
   type Product,
 } from "../../types/product";
+import WhatsAppCheckoutDialog from "./WhatsAppCheckoutDialog";
 
 interface ProductDetailViewProps {
   product: Product;
@@ -52,10 +53,15 @@ export default function ProductDetailView({
   );
 
   const [activeIndex, setActiveIndex] = useState(0);
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const hasMultipleImages = gallery.length > 1;
 
   const activeImage = gallery[activeIndex] ?? FALLBACK_PRODUCT_IMAGE;
   const productWhatsAppUrl = buildProductWhatsAppUrl(product);
+  const directCheckoutItems = useMemo(
+    () => [{ ...toCartProductSnapshot(product), quantity: 1 }],
+    [product],
+  );
 
   const addItem = useCartStore((state) => state.addItem);
   const openCart = useCartStore((state) => state.openCart);
@@ -243,15 +249,14 @@ export default function ProductDetailView({
               </p>
 
               <div className="mt-5 grid gap-2">
-                <a
-                  href={productWhatsAppUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  type="button"
+                  onClick={() => setIsCheckoutOpen(true)}
                   className="inline-flex items-center justify-center gap-2 border border-[color:var(--brand-coral)]/35 bg-[color:var(--brand-coral)] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)] transition hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--brand-coral)]/45"
                 >
                   <MessageCircle className="h-3.5 w-3.5" />
-                  Consultar y comprar por WhatsApp
-                </a>
+                  Comprar por WhatsApp
+                </button>
 
                 <button
                   type="button"
@@ -406,6 +411,13 @@ export default function ProductDetailView({
           </section>
         ) : null}
       </div>
+
+      <WhatsAppCheckoutDialog
+        open={isCheckoutOpen}
+        onClose={() => setIsCheckoutOpen(false)}
+        items={directCheckoutItems}
+        source="product"
+      />
     </div>
   );
 }

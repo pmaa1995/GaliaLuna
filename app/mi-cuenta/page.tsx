@@ -178,10 +178,15 @@ export default async function AccountPage({
             </div>
             <div className="rounded-[16px] border border-[color:var(--line)] bg-[color:var(--bg-soft)] p-4">
               <p className="text-[10px] uppercase tracking-[0.16em] text-[color:var(--ink-soft)]">
-                Contacto rapido
+                Tu telefono de entrega
               </p>
               <p className="mt-2 text-sm font-medium text-[color:var(--ink)]">
-                {profile.deliveryPhone || CONTACT_PHONE_DISPLAY}
+                {profile.deliveryPhone || "Aun no registrado"}
+              </p>
+              <p className="mt-1 text-xs leading-6 text-[color:var(--ink-soft)]">
+                {profile.deliveryPhone
+                  ? "Este numero se usa para coordinar la entrega."
+                  : `Soporte de tienda: ${CONTACT_PHONE_DISPLAY}`}
               </p>
             </div>
           </div>

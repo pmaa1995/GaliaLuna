@@ -23,6 +23,7 @@ import {
   PRODUCT_IMAGE_BLUR_DATA_URL,
   formatDOP,
 } from "../../types/product";
+import WhatsAppCheckoutDialog from "./WhatsAppCheckoutDialog";
 
 function buildWhatsAppMessage(
   items: ReturnType<typeof useCartStore.getState>["items"],
@@ -137,6 +138,7 @@ const CartLineItem = memo(function CartLineItem({
 export default function CartDrawer() {
   const prefersReducedMotion = useReducedMotion();
   const [hasMounted, setHasMounted] = useState(false);
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
   const items = useCartStore((state) => state.items);
   const isOpen = useCartStore((state) => state.isOpen);
@@ -165,8 +167,6 @@ export default function CartDrawer() {
   const safeIsOpen = hasMounted ? isOpen : false;
   const total = calculateCartTotal(safeItems);
   const totalItems = calculateCartCount(safeItems);
-  const whatsappUrl =
-    safeItems.length > 0 ? buildWhatsAppCheckoutUrl(safeItems, total) : "";
 
   return (
     <>
@@ -263,15 +263,14 @@ export default function CartDrawer() {
 
               <div className="mt-3 grid gap-2">
                 {safeItems.length > 0 ? (
-                  <a
-                    href={whatsappUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <button
+                    type="button"
+                    onClick={() => setIsCheckoutOpen(true)}
                     className="inline-flex items-center justify-center gap-2 border border-[color:var(--brand-coral)]/35 bg-[color:var(--brand-coral)] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)] transition hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--brand-coral)]/45"
                   >
                     <MessageCircle className="h-3.5 w-3.5" />
                     Enviar pedido por WhatsApp
-                  </a>
+                  </button>
                 ) : (
                   <button
                     type="button"
@@ -296,6 +295,14 @@ export default function CartDrawer() {
           </motion.aside>
         ) : null}
       </AnimatePresence>
+
+      <WhatsAppCheckoutDialog
+        open={isCheckoutOpen}
+        onClose={() => setIsCheckoutOpen(false)}
+        items={safeItems}
+        source="cart"
+        onSubmitted={closeCart}
+      />
     </>
   );
 }
