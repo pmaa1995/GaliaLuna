@@ -268,10 +268,15 @@ function textareaClassName() {
 function openWhatsAppBridgeTab() {
   if (typeof window === "undefined") return null;
 
-  const bridgeTab = window.open("", "_blank", "noopener");
+  // IMPORTANT: do not use `noopener` in the bridge popup. Some browsers create
+  // the tab but return `null` when `noopener` is passed, which leaves a
+  // permanent `about:blank` tab and then opens WhatsApp in a second tab.
+  const bridgeTab = window.open("", "_blank");
   if (!bridgeTab) return null;
 
   try {
+    // We can safely sever the opener manually before navigating to WhatsApp.
+    bridgeTab.opener = null;
     bridgeTab.document.title = "Abriendo WhatsApp...";
     bridgeTab.document.body.style.margin = "0";
     bridgeTab.document.body.style.fontFamily =
@@ -448,18 +453,11 @@ export default function WhatsAppCheckoutDialog({
           }
         }, 1800);
       } catch {
-        const fallbackTab = window.open(url, "_blank", "noopener");
-        if (!fallbackTab) {
-          window.location.assign(url);
-        }
-      }
-    } else {
-      // Fallback for popup-blocked browsers. Try a direct tab open first to keep the
-      // store page visible; if blocked, navigate in the same tab as last resort.
-      const fallbackTab = window.open(url, "_blank", "noopener");
-      if (!fallbackTab) {
         window.location.assign(url);
       }
+    } else {
+      // Popup blocked: fall back to same-tab redirect (no extra blank tabs).
+      window.location.assign(url);
     }
     setIsSubmitting(false);
     onClose();
