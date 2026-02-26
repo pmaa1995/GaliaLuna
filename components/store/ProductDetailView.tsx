@@ -299,7 +299,7 @@ export default function ProductDetailView({
                   <div className="mt-3 flex flex-wrap gap-2">
                     {lastDirectOrder.orderCode && lastDirectOrder.signedIn ? (
                       <Link
-                        href={`/mi-cuenta?pedido=${encodeURIComponent(lastDirectOrder.orderCode)}`}
+                        href={`/mi-cuenta/pedidos/${encodeURIComponent(lastDirectOrder.orderCode)}`}
                         className="inline-flex items-center gap-2 rounded-full border border-[color:var(--line)] bg-[color:var(--paper)] px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)] transition hover:bg-[color:var(--bg-soft)]"
                       >
                         Ver pedido en progreso

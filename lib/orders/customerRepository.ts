@@ -1,6 +1,12 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 
-import type { AdminOrderDetail, AdminOrderItem, AdminOrderSummary } from "./types";
+import type {
+  AdminOrderDetail,
+  AdminOrderItem,
+  CustomerOrderSummary,
+  CustomerOrdersPageResult,
+  OrderStatus,
+} from "./types";
 
 interface D1AllResult<T> {
   results?: T[];
@@ -38,10 +44,25 @@ type OrderRow = {
   subtotal_amount: number;
   currency: string;
   item_count: number;
-  status: AdminOrderSummary["status"];
+  status: OrderStatus;
   channel: string;
   created_at: string;
   updated_at: string;
+};
+
+type CustomerOrderListRow = {
+  id: number;
+  order_code: string;
+  item_count: number;
+  subtotal_amount: number;
+  currency: string;
+  status: OrderStatus;
+  created_at: string;
+  updated_at: string;
+};
+
+type CountRow = {
+  total: number | string;
 };
 
 type OrderItemRow = {
@@ -67,7 +88,22 @@ async function getOrdersDb(): Promise<OrdersD1DatabaseLike | null> {
   }
 }
 
-function mapOrderSummary(row: OrderRow): AdminOrderSummary {
+function mapOrderItem(row: OrderItemRow): AdminOrderItem {
+  return {
+    id: Number(row.id),
+    orderId: Number(row.order_id),
+    productId: row.product_id,
+    productName: row.product_name,
+    productCategory: row.product_category,
+    unitPrice: Number(row.unit_price),
+    quantity: Number(row.quantity),
+    lineTotal: Number(row.line_total),
+    currency: row.currency,
+    imageUrl: row.image_url,
+  };
+}
+
+function mapOrderDetail(row: OrderRow, items: AdminOrderItem[]): AdminOrderDetail {
   return {
     id: Number(row.id),
     orderCode: row.order_code,
@@ -87,27 +123,6 @@ function mapOrderSummary(row: OrderRow): AdminOrderSummary {
     updatedAt: row.updated_at,
     inventoryAdjustedAt: null,
     inventoryAdjustmentError: null,
-  };
-}
-
-function mapOrderItem(row: OrderItemRow): AdminOrderItem {
-  return {
-    id: Number(row.id),
-    orderId: Number(row.order_id),
-    productId: row.product_id,
-    productName: row.product_name,
-    productCategory: row.product_category,
-    unitPrice: Number(row.unit_price),
-    quantity: Number(row.quantity),
-    lineTotal: Number(row.line_total),
-    currency: row.currency,
-    imageUrl: row.image_url,
-  };
-}
-
-function mapOrderDetail(row: OrderRow, items: AdminOrderItem[]): AdminOrderDetail {
-  return {
-    ...mapOrderSummary(row),
     sector: row.sector ?? null,
     addressLine1: row.address_line1,
     addressLine2: row.address_line2 ?? null,
@@ -118,39 +133,118 @@ function mapOrderDetail(row: OrderRow, items: AdminOrderItem[]): AdminOrderDetai
   };
 }
 
-export async function listOrdersForCustomer(clerkUserId: string, limit = 20) {
-  const db = await getOrdersDb();
-  if (!db || !clerkUserId.trim()) return [] as AdminOrderSummary[];
+function mapCustomerOrderSummary(row: CustomerOrderListRow): CustomerOrderSummary {
+  return {
+    id: Number(row.id),
+    orderCode: row.order_code,
+    itemCount: Number(row.item_count),
+    subtotalAmount: Number(row.subtotal_amount),
+    currency: row.currency,
+    status: row.status,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
 
-  const cappedLimit = Math.max(1, Math.min(limit, 50));
-  const result = await db
+function toPositiveInt(value: number, fallback: number) {
+  if (!Number.isFinite(value)) return fallback;
+  return Math.max(1, Math.floor(value));
+}
+
+export async function listOrderSummariesForCustomerPage(params: {
+  clerkUserId: string;
+  page?: number;
+  pageSize?: number;
+}): Promise<CustomerOrdersPageResult> {
+  const clerkUserId = params.clerkUserId.trim();
+  const db = await getOrdersDb();
+  const pageSize = Math.max(1, Math.min(toPositiveInt(params.pageSize ?? 10, 10), 50));
+  const page = toPositiveInt(params.page ?? 1, 1);
+  const offset = (page - 1) * pageSize;
+
+  if (!db || !clerkUserId) {
+    return {
+      orders: [],
+      total: 0,
+      page,
+      pageSize,
+      hasNextPage: false,
+      hasPreviousPage: page > 1,
+    };
+  }
+
+  const [countRow, listResult] = await Promise.all([
+    db
+      .prepare(`SELECT COUNT(*) AS total FROM orders WHERE clerk_user_id = ?`)
+      .bind(clerkUserId)
+      .first<CountRow>(),
+    db
+      .prepare(
+        `SELECT
+          id,
+          order_code,
+          item_count,
+          subtotal_amount,
+          currency,
+          status,
+          created_at,
+          updated_at
+        FROM orders
+        WHERE clerk_user_id = ?
+        ORDER BY created_at DESC
+        LIMIT ? OFFSET ?`,
+      )
+      .bind(clerkUserId, pageSize, offset)
+      .all<CustomerOrderListRow>(),
+  ]);
+
+  const total = Number(countRow?.total ?? 0);
+  const orders = (listResult.results ?? []).map(mapCustomerOrderSummary);
+
+  return {
+    orders,
+    total,
+    page,
+    pageSize,
+    hasNextPage: offset + orders.length < total,
+    hasPreviousPage: page > 1,
+  };
+}
+
+const IN_PROGRESS_ORDER_STATUSES: readonly OrderStatus[] = [
+  "pending_confirmation",
+  "confirmed",
+  "in_preparation",
+  "shipped",
+] as const;
+
+export async function getLatestInProgressOrderForCustomer(clerkUserId: string) {
+  const db = await getOrdersDb();
+  const userId = clerkUserId.trim();
+  if (!db || !userId) return null as CustomerOrderSummary | null;
+
+  const placeholders = IN_PROGRESS_ORDER_STATUSES.map(() => "?").join(", ");
+  const row = await db
     .prepare(
       `SELECT
         id,
         order_code,
-        source,
-        customer_mode,
-        clerk_user_id,
-        full_name,
-        email,
-        phone,
-        province,
-        city,
+        item_count,
         subtotal_amount,
         currency,
-        item_count,
         status,
         created_at,
         updated_at
       FROM orders
       WHERE clerk_user_id = ?
+        AND status IN (${placeholders})
       ORDER BY created_at DESC
-      LIMIT ?`,
+      LIMIT 1`,
     )
-    .bind(clerkUserId, cappedLimit)
-    .all<OrderRow>();
+    .bind(userId, ...IN_PROGRESS_ORDER_STATUSES)
+    .first<CustomerOrderListRow>();
 
-  return (result.results ?? []).map(mapOrderSummary);
+  return row ? mapCustomerOrderSummary(row) : null;
 }
 
 export async function getOrderDetailByCodeForCustomer(

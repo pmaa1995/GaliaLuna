@@ -99,3 +99,23 @@ export interface AdminOrderDetail extends AdminOrderSummary {
   channel: string;
   items: AdminOrderItem[];
 }
+
+export interface CustomerOrderSummary {
+  id: number;
+  orderCode: string;
+  itemCount: number;
+  subtotalAmount: number;
+  currency: string;
+  status: OrderStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CustomerOrdersPageResult {
+  orders: CustomerOrderSummary[];
+  total: number;
+  page: number;
+  pageSize: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}

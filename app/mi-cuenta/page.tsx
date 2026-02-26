@@ -24,6 +24,7 @@ import { saveAccountProfileAction } from "./actions";
 type PageSearchParams = {
   perfil?: string | string[];
   pedido?: string | string[];
+  pedidosPage?: string | string[];
 };
 
 type DeliveryProfile = {
@@ -93,6 +94,14 @@ function getPedidoCode(searchParams?: PageSearchParams) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function getOrdersPage(searchParams?: PageSearchParams) {
+  const raw = searchParams?.pedidosPage;
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  const parsed = Number.parseInt(typeof value === "string" ? value : "", 10);
+  if (!Number.isFinite(parsed) || parsed < 1) return 1;
+  return parsed;
+}
+
 function inputClassName() {
   return "mt-2 h-11 w-full rounded-[12px] border border-[color:var(--line)] bg-[color:var(--bg-soft)] px-3 text-sm text-[color:var(--ink)] outline-none transition placeholder:text-[color:var(--ink-soft)] focus:border-[color:var(--brand-sage)]";
 }
@@ -156,6 +165,11 @@ export default async function AccountPage({
   const profile = readProfileFromMetadata(user?.unsafeMetadata);
   const isAdmin = isAdminFromClerkUser(user);
   const selectedOrderCode = getPedidoCode(searchParams);
+  const ordersPage = getOrdersPage(searchParams);
+
+  if (selectedOrderCode) {
+    redirect(`/mi-cuenta/pedidos/${encodeURIComponent(selectedOrderCode)}`);
+  }
 
   return (
     <main className="mx-auto min-h-[calc(100vh-4rem)] max-w-[1280px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
@@ -521,7 +535,7 @@ export default async function AccountPage({
 
           <AccountOrderHistoryPanel
             clerkUserId={session.userId}
-            selectedOrderCode={selectedOrderCode || undefined}
+            page={ordersPage}
           />
         </section>
       </div>
