@@ -13,4 +13,5 @@ coverage
 tsconfig.tsbuildinfo
 .open-next
 .wrangler
+.sanity
 cloudflare-env.d.ts

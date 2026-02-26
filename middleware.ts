@@ -5,8 +5,8 @@ const clerkEnabled = Boolean(
   process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY,
 );
 
-// Only run Clerk auth checks on private account routes to keep public pages lean.
-const isProtectedRoute = createRouteMatcher(["/mi-cuenta(.*)"]);
+// Only run Clerk auth checks on private account/admin routes to keep public pages lean.
+const isProtectedRoute = createRouteMatcher(["/mi-cuenta(.*)", "/admin(.*)"]);
 
 const protectedMiddleware = clerkMiddleware(async (auth, req) => {
   if (isProtectedRoute(req)) {
@@ -25,5 +25,5 @@ export default function middleware(
 }
 
 export const config = {
-  matcher: ["/mi-cuenta(.*)"],
+  matcher: ["/mi-cuenta(.*)", "/admin(.*)"],
 };

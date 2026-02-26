@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 
 import AccountSignOutButton from "../../components/auth/AccountSignOutButton";
+import { isAdminFromClerkUser } from "../../lib/admin/auth";
 import {
   CALL_OWNER_NUMBER,
   CALL_PHONE_DISPLAY,
@@ -146,6 +147,7 @@ export default async function AccountPage({
     [firstName, lastName].filter(Boolean).join(" ") || user?.username || "Cliente";
 
   const profile = readProfileFromMetadata(user?.unsafeMetadata);
+  const isAdmin = isAdminFromClerkUser(user);
 
   return (
     <main className="mx-auto min-h-[calc(100vh-4rem)] max-w-[1280px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
@@ -220,6 +222,15 @@ export default async function AccountPage({
               <ShieldCheck className="h-3.5 w-3.5" />
               Seguridad y acceso
             </Link>
+            {isAdmin ? (
+              <Link
+                href="/admin/pedidos"
+                className="inline-flex items-center gap-2 rounded-full border border-[color:var(--brand-sage)]/45 bg-[color:var(--brand-sage)]/12 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)] transition hover:bg-[color:var(--brand-sage)]/20"
+              >
+                <ShieldCheck className="h-3.5 w-3.5" />
+                Panel admin pedidos
+              </Link>
+            ) : null}
             <AccountSignOutButton />
           </div>
 
@@ -430,6 +441,24 @@ export default async function AccountPage({
                 </div>
               ))}
             </div>
+
+            {isAdmin ? (
+              <div className="mt-4 rounded-[14px] border border-[color:var(--brand-sage)]/35 bg-[color:var(--brand-sage)]/10 p-4">
+                <p className="text-[10px] uppercase tracking-[0.16em] text-[color:var(--ink-soft)]">
+                  Acceso especial
+                </p>
+                <p className="mt-2 text-sm leading-6 text-[color:var(--ink)]">
+                  Tu correo tiene acceso de administracion. Puedes gestionar estados y seguimiento desde el panel interno de pedidos.
+                </p>
+                <Link
+                  href="/admin/pedidos"
+                  className="mt-3 inline-flex items-center gap-2 rounded-full border border-[color:var(--line)] bg-[color:var(--paper)] px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)]"
+                >
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                  Ir al panel admin
+                </Link>
+              </div>
+            ) : null}
           </section>
 
           <section className="border border-[color:var(--line)] bg-[color:var(--paper)] p-5 sm:p-7">

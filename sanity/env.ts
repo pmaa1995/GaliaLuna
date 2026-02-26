@@ -7,8 +7,8 @@ export const SANITY_API_VERSION =
 export const SANITY_STUDIO_BASE_PATH = "/studio";
 
 export const SANITY_READ_TOKEN = process.env.SANITY_READ_TOKEN;
+export const SANITY_WRITE_TOKEN = process.env.SANITY_WRITE_TOKEN;
 
 export const isSanityEnvironmentConfigured = Boolean(
   SANITY_PROJECT_ID && SANITY_DATASET,
 );
-
