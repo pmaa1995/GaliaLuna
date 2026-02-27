@@ -37,6 +37,8 @@ type PageSearchParams = {
   page?: string | string[];
 };
 
+const ADMIN_ORDERS_PAGE_SIZE = 12;
+
 function pickFirst(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
@@ -465,7 +467,7 @@ export default async function AdminOrdersPage({
       status: statusFilter,
       q,
       page,
-      pageSize: 30,
+      pageSize: ADMIN_ORDERS_PAGE_SIZE,
     }),
     selectedOrderCode ? getOrderDetailByCode(selectedOrderCode) : Promise.resolve(null),
   ]);
@@ -573,7 +575,7 @@ export default async function AdminOrdersPage({
                 {total} {total === 1 ? "pedido" : "pedidos"} encontrados
               </p>
               <p className="text-xs text-[color:var(--ink-soft)]">
-                Estados e inventario se gestionan desde este panel. Se cargan 30 por pagina para mantenerlo rapido.
+                Estados e inventario se gestionan desde este panel. Se cargan {ordersPage.pageSize} por pagina para mantenerlo rapido.
               </p>
             </div>
 
