@@ -70,7 +70,7 @@ export default function ProgressiveImage({
       <Image
         {...imageProps}
         src={currentSrc}
-        quality={quality ?? 72}
+        quality={quality}
         className={className}
         style={mergedStyle}
         onError={handleError}
@@ -82,4 +82,3 @@ export default function ProgressiveImage({
     </>
   );
 }
-
