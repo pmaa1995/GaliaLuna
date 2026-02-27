@@ -8,11 +8,17 @@ const clerkEnabled = Boolean(
 // Only run Clerk auth checks on private account/admin routes to keep public pages lean.
 const isProtectedRoute = createRouteMatcher(["/mi-cuenta(.*)", "/admin(.*)"]);
 
-const protectedMiddleware = clerkMiddleware(async (auth, req) => {
-  if (isProtectedRoute(req)) {
-    await auth.protect();
-  }
-});
+const protectedMiddleware = clerkMiddleware(
+  async (auth, req) => {
+    if (isProtectedRoute(req)) {
+      await auth.protect();
+    }
+  },
+  {
+    signInUrl: "/iniciar-sesion",
+    signUpUrl: "/registrarse",
+  },
+);
 
 export default function middleware(
   ...args: Parameters<typeof protectedMiddleware>
