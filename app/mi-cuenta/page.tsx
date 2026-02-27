@@ -163,8 +163,8 @@ export default async function AccountPage({
 
   return (
     <main className="mx-auto min-h-[calc(100vh-4rem)] max-w-[1280px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
-      <div className="grid gap-6 lg:grid-cols-[1.08fr_0.92fr]">
-        <section className="border border-[color:var(--line)] bg-[color:var(--paper)] p-5 sm:p-7">
+      <div className="grid items-start gap-6 lg:grid-cols-[1.08fr_0.92fr]">
+        <section className="self-start border border-[color:var(--line)] bg-[color:var(--paper)] p-5 sm:p-7">
           <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--ink-soft)]">
             Mi cuenta
           </p>
@@ -422,7 +422,7 @@ export default async function AccountPage({
           </div>
         </section>
 
-        <section className="space-y-6">
+        <section className="self-start space-y-6">
           <section className="border border-[color:var(--line)] bg-[color:var(--paper)] p-5 sm:p-7">
             <div className="flex items-center gap-3">
               <div className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[color:var(--line)] bg-[color:var(--bg-soft)] text-[color:var(--ink)]">
