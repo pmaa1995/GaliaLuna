@@ -39,6 +39,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const clerkEnabled = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
+  const clerkFrontendApi = process.env.NEXT_PUBLIC_CLERK_FRONTEND_API;
+  const clerkOrigin = clerkFrontendApi ? `https://${clerkFrontendApi}` : null;
   const content = clerkEnabled ? (
     <ClerkProvider>{children}</ClerkProvider>
   ) : (
@@ -47,6 +49,14 @@ export default function RootLayout({
 
   return (
     <html lang="es">
+      <head>
+        {clerkEnabled && clerkOrigin ? (
+          <>
+            <link rel="dns-prefetch" href={clerkOrigin} />
+            <link rel="preconnect" href={clerkOrigin} crossOrigin="anonymous" />
+          </>
+        ) : null}
+      </head>
       <body
         className={`${inter.variable} ${playfair.variable} bg-[color:var(--bg-shell)] text-[color:var(--ink)] antialiased`}
       >

@@ -122,6 +122,7 @@ export default async function AccountOrderHistoryPanel({
       clerkUserId,
       page: currentPage,
       pageSize,
+      includeTotal: !isCompact,
     }),
     getLatestInProgressOrderForCustomer(clerkUserId),
   ]);
@@ -159,7 +160,9 @@ export default async function AccountOrderHistoryPanel({
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
                 <p className="text-sm text-[color:var(--ink-soft)]">
-                  {total} {total === 1 ? "pedido encontrado" : "pedidos encontrados"}
+                  {isCompact
+                    ? `${visibleOrders.length + (inProgressOrder ? 1 : 0)} pedidos recientes`
+                    : `${total} ${total === 1 ? "pedido encontrado" : "pedidos encontrados"}`}
                 </p>
                 <p className="mt-1 text-xs text-[color:var(--ink-soft)]">
                   {isCompact

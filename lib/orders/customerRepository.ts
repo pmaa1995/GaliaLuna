@@ -155,12 +155,14 @@ export async function listOrderSummariesForCustomerPage(params: {
   clerkUserId: string;
   page?: number;
   pageSize?: number;
+  includeTotal?: boolean;
 }): Promise<CustomerOrdersPageResult> {
   const clerkUserId = params.clerkUserId.trim();
   const db = await getOrdersDb();
   const pageSize = Math.max(1, Math.min(toPositiveInt(params.pageSize ?? 10, 10), 50));
   const page = toPositiveInt(params.page ?? 1, 1);
   const offset = (page - 1) * pageSize;
+  const includeTotal = params.includeTotal ?? true;
 
   if (!db || !clerkUserId) {
     return {
@@ -169,6 +171,41 @@ export async function listOrderSummariesForCustomerPage(params: {
       page,
       pageSize,
       hasNextPage: false,
+      hasPreviousPage: page > 1,
+    };
+  }
+
+  if (!includeTotal) {
+    const listResult = await db
+      .prepare(
+        `SELECT
+          id,
+          order_code,
+          item_count,
+          subtotal_amount,
+          currency,
+          status,
+          created_at,
+          updated_at
+        FROM orders
+        WHERE clerk_user_id = ?
+        ORDER BY created_at DESC
+        LIMIT ? OFFSET ?`,
+      )
+      .bind(clerkUserId, pageSize + 1, offset)
+      .all<CustomerOrderListRow>();
+
+    const rawOrders = listResult.results ?? [];
+    const hasNextPage = rawOrders.length > pageSize;
+    const orders = rawOrders.slice(0, pageSize).map(mapCustomerOrderSummary);
+    const estimatedTotal = offset + orders.length + (hasNextPage ? 1 : 0);
+
+    return {
+      orders,
+      total: estimatedTotal,
+      page,
+      pageSize,
+      hasNextPage,
       hasPreviousPage: page > 1,
     };
   }

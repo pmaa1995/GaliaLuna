@@ -1,6 +1,7 @@
 ﻿import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth, currentUser } from "@clerk/nextjs/server";
+import { Suspense } from "react";
 import {
   CheckCircle2,
   MapPin,
@@ -91,6 +92,35 @@ function getPedidoCode(searchParams?: PageSearchParams) {
   const raw = searchParams?.pedido;
   const value = Array.isArray(raw) ? raw[0] : raw;
   return typeof value === "string" ? value.trim() : "";
+}
+
+function AccountOrderHistoryFallback() {
+  return (
+    <section className="border border-[color:var(--line)] bg-[color:var(--paper)] p-5 sm:p-7">
+      <div className="flex items-center gap-3">
+        <div className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[color:var(--line)] bg-[color:var(--bg-soft)] text-[color:var(--ink)]">
+          <ShoppingBag className="h-5 w-5" />
+        </div>
+        <div>
+          <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--ink-soft)]">
+            Pedidos de tu cuenta
+          </p>
+          <p className="text-sm font-medium text-[color:var(--ink)]">
+            Cargando historial...
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-5 space-y-3">
+        {[0, 1, 2].map((item) => (
+          <div
+            key={item}
+            className="h-24 animate-pulse rounded-[14px] border border-[color:var(--line)] bg-[color:var(--bg-soft)]"
+          />
+        ))}
+      </div>
+    </section>
+  );
 }
 
 function inputClassName() {
@@ -523,10 +553,12 @@ export default async function AccountPage({
             </div>
           </section>
 
-          <AccountOrderHistoryPanel
-            clerkUserId={session.userId}
-            mode="compact"
-          />
+          <Suspense fallback={<AccountOrderHistoryFallback />}>
+            <AccountOrderHistoryPanel
+              clerkUserId={session.userId}
+              mode="compact"
+            />
+          </Suspense>
         </section>
       </div>
     </main>
