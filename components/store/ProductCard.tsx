@@ -62,7 +62,7 @@ function ProductCardComponent({
                   priority={index < 2}
                   placeholder="blur"
                   blurDataURL={PRODUCT_IMAGE_BLUR_DATA_URL}
-                  sizes="(max-width: 768px) 92vw, (max-width: 1280px) 60vw, 56vw"
+                  sizes="(max-width: 640px) calc(100vw - 32px), (max-width: 1024px) calc(100vw - 48px), (max-width: 1440px) 58vw, 840px"
                   className="object-cover transition duration-200 ease-editorial group-hover:scale-[1.03]"
                 />
               </div>

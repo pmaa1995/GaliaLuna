@@ -88,7 +88,7 @@ function HeroEditorialComponent({
                   priority
                   placeholder="blur"
                   blurDataURL={PRODUCT_IMAGE_BLUR_DATA_URL}
-                  sizes="(max-width: 768px) 92vw, (max-width: 1280px) 58vw, 54vw"
+                  sizes="(max-width: 640px) calc(100vw - 32px), (max-width: 1024px) calc(100vw - 48px), 840px"
                   className="object-cover"
                 />
               )}

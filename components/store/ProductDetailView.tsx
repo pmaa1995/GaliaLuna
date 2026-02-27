@@ -212,7 +212,7 @@ export default function ProductDetailView({
                         priority
                         placeholder="blur"
                         blurDataURL={PRODUCT_IMAGE_BLUR_DATA_URL}
-                        sizes="(max-width: 1024px) 92vw, 52vw"
+                        sizes="(max-width: 640px) calc(100vw - 72px), (max-width: 1024px) calc(100vw - 112px), 820px"
                         className="object-contain p-5 sm:p-8 lg:p-10"
                       />
                     </div>
@@ -386,7 +386,7 @@ export default function ProductDetailView({
                           fill
                           placeholder="blur"
                           blurDataURL={PRODUCT_IMAGE_BLUR_DATA_URL}
-                          sizes="160px"
+                          sizes="128px"
                           className="object-cover"
                         />
                       </div>

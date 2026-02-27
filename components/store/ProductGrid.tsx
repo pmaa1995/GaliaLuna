@@ -222,12 +222,12 @@ export default function ProductGrid({
                   src={img.url}
                   alt={img.alt || item.name}
                   fill
-                  priority
-                  loading="eager"
+                  priority={idx === 0}
+                  loading={idx === 0 ? "eager" : "lazy"}
                   fetchPriority={idx === 0 ? "high" : "auto"}
                   placeholder="blur"
                   blurDataURL={PRODUCT_IMAGE_BLUR_DATA_URL}
-                  sizes="240px"
+                  sizes="(max-width: 1024px) 32vw, 200px"
                   className="object-cover"
                 />
                   </div>
@@ -342,10 +342,9 @@ export default function ProductGrid({
                             src={img.url}
                             alt={img.alt || product.name}
                             fill
-                            priority={index < 2}
                             placeholder="blur"
                             blurDataURL={PRODUCT_IMAGE_BLUR_DATA_URL}
-                            sizes="(max-width: 1024px) 92vw, 30vw"
+                            sizes="(max-width: 420px) calc(100vw - 64px), 330px"
                             className="object-cover"
                           />
                         </div>
@@ -412,7 +411,7 @@ export default function ProductGrid({
                               fill
                               placeholder="blur"
                               blurDataURL={PRODUCT_IMAGE_BLUR_DATA_URL}
-                              sizes="220px"
+                              sizes="200px"
                               className="object-cover"
                             />
                           </div>
@@ -474,7 +473,7 @@ export default function ProductGrid({
                 <article key={product._id} className="grid overflow-hidden border border-[color:var(--line)] bg-[color:var(--paper)] lg:grid-cols-2">
                   <div className={`${reverse ? "order-2" : ""} ${tone} p-6`}>
                     <div className="relative mx-auto aspect-[5/4] w-full max-w-[520px] overflow-hidden rounded-[22px] border border-[color:var(--paper)]/65 bg-[color:var(--paper)]/35 shadow-[0_16px_36px_rgba(43,42,40,0.10)]">
-                      <ProgressiveImage src={img.url} alt={img.alt || product.name} fill placeholder="blur" blurDataURL={PRODUCT_IMAGE_BLUR_DATA_URL} sizes="(max-width: 1024px) 92vw, 44vw" className="object-cover" />
+                      <ProgressiveImage src={img.url} alt={img.alt || product.name} fill placeholder="blur" blurDataURL={PRODUCT_IMAGE_BLUR_DATA_URL} sizes="(max-width: 640px) calc(100vw - 96px), (max-width: 1024px) calc(100vw - 128px), 520px" className="object-cover" />
                     </div>
                   </div>
                   <div className={`${reverse ? "order-1" : ""} flex items-center p-6 sm:p-8`}>

@@ -74,7 +74,7 @@ const CartLineItem = memo(function CartLineItem({
           fill
           placeholder="blur"
           blurDataURL={PRODUCT_IMAGE_BLUR_DATA_URL}
-          sizes="80px"
+          sizes="68px"
           className="object-cover"
         />
       </div>
