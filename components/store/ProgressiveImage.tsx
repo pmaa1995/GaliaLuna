@@ -1,7 +1,7 @@
 "use client";
 
 import Image, { type ImageProps } from "next/image";
-import { useEffect, useMemo, useState, type SyntheticEvent } from "react";
+import { useEffect, useState, type SyntheticEvent } from "react";
 
 function joinClasses(...classes: Array<string | false | undefined>) {
   return classes.filter(Boolean).join(" ");
@@ -31,16 +31,11 @@ export default function ProgressiveImage({
     setCurrentSrc(src);
     setHasFallback(false);
     setIsLoaded(false);
+    const revealTimer = window.setTimeout(() => {
+      setIsLoaded(true);
+    }, 3000);
+    return () => window.clearTimeout(revealTimer);
   }, [src]);
-
-  const mergedStyle = useMemo(
-    () => ({
-      ...style,
-      opacity: isLoaded ? 1 : 0,
-      transition: "opacity 420ms ease",
-    }),
-    [isLoaded, style],
-  );
 
   const handleError = (event: SyntheticEvent<HTMLImageElement, Event>) => {
     onError?.(event);
@@ -72,7 +67,8 @@ export default function ProgressiveImage({
         src={currentSrc}
         quality={quality}
         className={className}
-        style={mergedStyle}
+        style={style}
+        onLoad={() => setIsLoaded(true)}
         onError={handleError}
         onLoadingComplete={(img) => {
           setIsLoaded(true);
