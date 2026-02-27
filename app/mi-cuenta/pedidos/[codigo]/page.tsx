@@ -60,11 +60,11 @@ export default async function AccountOrderDetailPage({ params }: PageProps) {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Link
-              href="/mi-cuenta"
+              href="/mi-cuenta/pedidos"
               className="inline-flex items-center gap-2 rounded-full border border-[color:var(--line)] bg-[color:var(--paper)] px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)]"
             >
               <ChevronLeft className="h-3.5 w-3.5" />
-              Volver a mi cuenta
+              Volver al historial
             </Link>
             <Link
               href="/"
@@ -92,7 +92,7 @@ export default async function AccountOrderDetailPage({ params }: PageProps) {
               </p>
               <div className="mt-4 flex flex-wrap items-center gap-2">
                 <Link
-                  href="/mi-cuenta"
+                  href="/mi-cuenta/pedidos"
                   className="inline-flex items-center gap-2 rounded-full border border-[color:var(--line)] bg-[color:var(--paper)] px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)]"
                 >
                   <ChevronLeft className="h-3.5 w-3.5" />

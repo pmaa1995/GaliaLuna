@@ -16,15 +16,18 @@ import {
   InProgressOrderCard,
 } from "./orderUi";
 
-const DEFAULT_PAGE_SIZE = 10;
+const COMPACT_PAGE_SIZE = 5;
+const FULL_PAGE_SIZE = 10;
 
 function buildAccountOrdersPageHref(page: number) {
-  return page > 1 ? `/mi-cuenta?pedidosPage=${page}` : "/mi-cuenta";
+  return page > 1 ? `/mi-cuenta/pedidos?page=${page}` : "/mi-cuenta/pedidos";
 }
 
 function buildSupportHomeUrl() {
   return `https://wa.me/${WHATSAPP_OWNER_NUMBER}`;
 }
+
+type HistoryMode = "compact" | "full";
 
 function OrderListCard({ order }: { order: CustomerOrderSummary }) {
   return (
@@ -35,8 +38,8 @@ function OrderListCard({ order }: { order: CustomerOrderSummary }) {
             {order.orderCode}
           </p>
           <p className="mt-1 text-xs text-[color:var(--ink-soft)]">
-            {formatAccountOrderDateTime(order.createdAt)} · {order.itemCount}{" "}
-            {order.itemCount === 1 ? "pieza" : "piezas"} ·{" "}
+            {formatAccountOrderDateTime(order.createdAt)} - {order.itemCount}{" "}
+            {order.itemCount === 1 ? "pieza" : "piezas"} -{" "}
             {formatDOP(order.subtotalAmount)}
           </p>
         </div>
@@ -74,7 +77,9 @@ function OrdersEmptyState() {
         Tu historial aparecera aqui
       </h3>
       <p className="mt-3 text-sm leading-7 text-[color:var(--ink-soft)]">
-        Solo se muestran los pedidos realizados mientras iniciaste sesion. Si pediste como invitado, puedes escribir por WhatsApp y compartir el codigo de pedido para seguimiento.
+        Solo se muestran los pedidos realizados mientras iniciaste sesion. Si
+        pediste como invitado, puedes escribir por WhatsApp y compartir el
+        codigo de pedido para seguimiento.
       </p>
       <div className="mt-4 flex flex-wrap gap-2">
         <Link
@@ -101,17 +106,22 @@ function OrdersEmptyState() {
 export default async function AccountOrderHistoryPanel({
   clerkUserId,
   page = 1,
+  mode = "compact",
 }: {
   clerkUserId: string;
   page?: number;
+  mode?: HistoryMode;
 }) {
   const safePage = Number.isFinite(page) ? Math.max(1, Math.floor(page)) : 1;
+  const isCompact = mode === "compact";
+  const pageSize = isCompact ? COMPACT_PAGE_SIZE : FULL_PAGE_SIZE;
+  const currentPage = isCompact ? 1 : safePage;
 
   const [historyPage, inProgressOrder] = await Promise.all([
     listOrderSummariesForCustomerPage({
       clerkUserId,
-      page: safePage,
-      pageSize: DEFAULT_PAGE_SIZE,
+      page: currentPage,
+      pageSize,
     }),
     getLatestInProgressOrderForCustomer(clerkUserId),
   ]);
@@ -143,9 +153,7 @@ export default async function AccountOrderHistoryPanel({
         </div>
       ) : (
         <div className="mt-5 space-y-4">
-          {inProgressOrder ? (
-            <InProgressOrderCard order={inProgressOrder} />
-          ) : null}
+          {inProgressOrder ? <InProgressOrderCard order={inProgressOrder} /> : null}
 
           <div className="rounded-[16px] border border-[color:var(--line)] bg-[color:var(--bg-soft)] p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -154,13 +162,25 @@ export default async function AccountOrderHistoryPanel({
                   {total} {total === 1 ? "pedido encontrado" : "pedidos encontrados"}
                 </p>
                 <p className="mt-1 text-xs text-[color:var(--ink-soft)]">
-                  Se muestran los pedidos hechos con tu cuenta.
+                  {isCompact
+                    ? `Mostrando los ultimos ${Math.min(pageSize, total)} pedidos de tu cuenta.`
+                    : "Se muestran los pedidos hechos con tu cuenta."}
                 </p>
               </div>
-              <p className="text-xs text-[color:var(--ink-soft)]">
-                Pagina {historyPage.page} · {Math.min(total, historyPage.page * historyPage.pageSize)}{" "}
-                de {total}
-              </p>
+
+              {isCompact ? (
+                <Link
+                  href={buildAccountOrdersPageHref(1)}
+                  className="inline-flex items-center rounded-full border border-[color:var(--line)] bg-[color:var(--paper)] px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)]"
+                >
+                  Ver historial completo
+                </Link>
+              ) : (
+                <p className="text-xs text-[color:var(--ink-soft)]">
+                  Pagina {historyPage.page} -{" "}
+                  {Math.min(total, historyPage.page * historyPage.pageSize)} de {total}
+                </p>
+              )}
             </div>
 
             {visibleOrders.length > 0 ? (
@@ -171,14 +191,17 @@ export default async function AccountOrderHistoryPanel({
               </div>
             ) : (
               <div className="mt-4 rounded-[14px] border border-[color:var(--line)] bg-[color:var(--paper)] p-4 text-sm text-[color:var(--ink-soft)]">
-                No hay pedidos en esta pagina.
+                {inProgressOrder
+                  ? "Tu pedido en progreso aparece arriba. El resto del historial se mostrara aqui."
+                  : "No hay pedidos en esta pagina."}
               </div>
             )}
 
-            {(hasPreviousPage || hasNextPage) && (
+            {!isCompact && (hasPreviousPage || hasNextPage) ? (
               <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-[color:var(--line)] pt-4">
                 <div className="text-xs text-[color:var(--ink-soft)]">
-                  Cargando {DEFAULT_PAGE_SIZE} pedidos por pagina para mantener la cuenta rapida.
+                  Cargando {FULL_PAGE_SIZE} pedidos por pagina para mantener la
+                  cuenta rapida.
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {hasPreviousPage ? (
@@ -208,7 +231,7 @@ export default async function AccountOrderHistoryPanel({
                   )}
                 </div>
               </div>
-            )}
+            ) : null}
           </div>
         </div>
       )}
