@@ -11,7 +11,12 @@ const isProtectedRoute = createRouteMatcher(["/mi-cuenta(.*)", "/admin(.*)"]);
 const protectedMiddleware = clerkMiddleware(
   async (auth, req) => {
     if (isProtectedRoute(req)) {
-      await auth.protect();
+      const { userId } = await auth();
+      if (!userId) {
+        const signInUrl = new URL("/iniciar-sesion", req.url);
+        signInUrl.searchParams.set("redirect_url", req.url);
+        return NextResponse.redirect(signInUrl);
+      }
     }
   },
   {
