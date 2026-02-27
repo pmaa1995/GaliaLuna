@@ -10,6 +10,7 @@ function joinClasses(...classes: Array<string | false | undefined>) {
 type ProgressiveImageProps = ImageProps & {
   skeletonClassName?: string;
   fallbackSrc?: string;
+  showSkeleton?: boolean;
 };
 
 export default function ProgressiveImage({
@@ -20,6 +21,7 @@ export default function ProgressiveImage({
   onLoadingComplete,
   skeletonClassName,
   fallbackSrc = "/images/product-placeholder.svg",
+  showSkeleton = false,
   quality,
   ...imageProps
 }: ProgressiveImageProps) {
@@ -54,14 +56,16 @@ export default function ProgressiveImage({
 
   return (
     <>
-      <span
-        aria-hidden
-        className={joinClasses(
-          "pointer-events-none absolute inset-0 skeleton-shimmer transition-opacity duration-500",
-          isLoaded ? "opacity-0" : "opacity-100",
-          skeletonClassName,
-        )}
-      />
+      {showSkeleton ? (
+        <span
+          aria-hidden
+          className={joinClasses(
+            "pointer-events-none absolute inset-0 skeleton-shimmer transition-opacity duration-500",
+            isLoaded ? "opacity-0" : "opacity-100",
+            skeletonClassName,
+          )}
+        />
+      ) : null}
       <Image
         {...imageProps}
         src={currentSrc}
