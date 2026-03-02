@@ -60,7 +60,7 @@ function ProductCardComponent({
                   alt={image.alt || product.name}
                   fill
                   priority={index < 2}
-                  quality={66}
+                  quality={75}
                   placeholder="blur"
                   blurDataURL={PRODUCT_IMAGE_BLUR_DATA_URL}
                   sizes="(max-width: 640px) calc(100vw - 32px), (max-width: 1024px) calc(100vw - 48px), (max-width: 1440px) 58vw, 840px"
