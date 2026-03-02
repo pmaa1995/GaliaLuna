@@ -72,6 +72,7 @@ const CartLineItem = memo(function CartLineItem({
           src={item.imageUrl || FALLBACK_PRODUCT_IMAGE.url}
           alt={item.imageAlt || item.name}
           fill
+          quality={60}
           placeholder="blur"
           blurDataURL={PRODUCT_IMAGE_BLUR_DATA_URL}
           sizes="68px"

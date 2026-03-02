@@ -86,6 +86,7 @@ function HeroEditorialComponent({
                   alt={image.alt || "Pieza destacada de Galia Luna"}
                   fill
                   priority
+                  quality={66}
                   placeholder="blur"
                   blurDataURL={PRODUCT_IMAGE_BLUR_DATA_URL}
                   sizes="(max-width: 640px) calc(100vw - 32px), (max-width: 1024px) calc(100vw - 48px), 840px"

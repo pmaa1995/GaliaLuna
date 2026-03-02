@@ -116,6 +116,9 @@ export default async function AccountOrderHistoryPanel({
   const isCompact = mode === "compact";
   const pageSize = isCompact ? COMPACT_PAGE_SIZE : FULL_PAGE_SIZE;
   const currentPage = isCompact ? 1 : safePage;
+  const minHeightClass = isCompact
+    ? "min-h-[460px] sm:min-h-[560px]"
+    : "min-h-[420px] sm:min-h-[500px]";
 
   const [historyPage, inProgressOrder] = await Promise.all([
     listOrderSummariesForCustomerPage({
@@ -133,7 +136,7 @@ export default async function AccountOrderHistoryPanel({
     : orders;
 
   return (
-    <section className="border border-[color:var(--line)] bg-[color:var(--paper)] p-5 sm:p-7">
+    <section className={`${minHeightClass} border border-[color:var(--line)] bg-[color:var(--paper)] p-5 sm:p-7`}>
       <div className="flex items-center gap-3">
         <div className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[color:var(--line)] bg-[color:var(--bg-soft)] text-[color:var(--ink)]">
           <ShoppingBag className="h-5 w-5" />

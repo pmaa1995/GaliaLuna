@@ -191,6 +191,7 @@ export default function ProductDetailView({
                             src={image.url}
                             alt={image.alt || product.name}
                             fill
+                            quality={64}
                             placeholder="blur"
                             blurDataURL={PRODUCT_IMAGE_BLUR_DATA_URL}
                             sizes="84px"
@@ -210,6 +211,7 @@ export default function ProductDetailView({
                         alt={activeImage.alt || product.name}
                         fill
                         priority
+                        quality={74}
                         placeholder="blur"
                         blurDataURL={PRODUCT_IMAGE_BLUR_DATA_URL}
                         sizes="(max-width: 640px) calc(100vw - 72px), (max-width: 1024px) calc(100vw - 112px), 820px"
@@ -384,6 +386,7 @@ export default function ProductDetailView({
                           src={image.url}
                           alt={image.alt || item.name}
                           fill
+                          quality={66}
                           placeholder="blur"
                           blurDataURL={PRODUCT_IMAGE_BLUR_DATA_URL}
                           sizes="128px"

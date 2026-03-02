@@ -96,7 +96,7 @@ function getPedidoCode(searchParams?: PageSearchParams) {
 
 function AccountOrderHistoryFallback() {
   return (
-    <section className="border border-[color:var(--line)] bg-[color:var(--paper)] p-5 sm:p-7">
+    <section className="min-h-[460px] border border-[color:var(--line)] bg-[color:var(--paper)] p-5 sm:min-h-[560px] sm:p-7">
       <div className="flex items-center gap-3">
         <div className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[color:var(--line)] bg-[color:var(--bg-soft)] text-[color:var(--ink)]">
           <ShoppingBag className="h-5 w-5" />
@@ -112,10 +112,10 @@ function AccountOrderHistoryFallback() {
       </div>
 
       <div className="mt-5 space-y-3">
-        {[0, 1, 2].map((item) => (
+        {[0, 1, 2, 3].map((item) => (
           <div
             key={item}
-            className="h-24 animate-pulse rounded-[14px] border border-[color:var(--line)] bg-[color:var(--bg-soft)]"
+            className="h-24 animate-pulse rounded-[14px] border border-[color:var(--line)] bg-[color:var(--bg-soft)] sm:h-28"
           />
         ))}
       </div>
@@ -205,16 +205,18 @@ export default async function AccountPage({
             Guarda tus datos de contacto y entrega para agilizar futuras compras por WhatsApp sin repetir informacion en cada pedido.
           </p>
 
-          {perfilStatus === "guardado" ? (
-            <div className="mt-5 rounded-[14px] border border-[color:var(--brand-sage)] bg-[color:var(--bg-soft)] p-4 text-sm text-[color:var(--ink)]">
-              Datos de perfil y entrega actualizados correctamente.
-            </div>
-          ) : null}
-          {perfilStatus === "error" ? (
-            <div className="mt-5 rounded-[14px] border border-[color:var(--brand-coral)] bg-[color:var(--bg-soft)] p-4 text-sm text-[color:var(--ink)]">
-              Completa los campos obligatorios para guardar tus datos.
-            </div>
-          ) : null}
+          <div className="mt-5 min-h-[68px]">
+            {perfilStatus === "guardado" ? (
+              <div className="rounded-[14px] border border-[color:var(--brand-sage)] bg-[color:var(--bg-soft)] p-4 text-sm text-[color:var(--ink)]">
+                Datos de perfil y entrega actualizados correctamente.
+              </div>
+            ) : null}
+            {perfilStatus === "error" ? (
+              <div className="rounded-[14px] border border-[color:var(--brand-coral)] bg-[color:var(--bg-soft)] p-4 text-sm text-[color:var(--ink)]">
+                Completa los campos obligatorios para guardar tus datos.
+              </div>
+            ) : null}
+          </div>
 
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
             <div className="rounded-[16px] border border-[color:var(--line)] bg-[color:var(--bg-soft)] p-4">
@@ -553,12 +555,14 @@ export default async function AccountPage({
             </div>
           </section>
 
-          <Suspense fallback={<AccountOrderHistoryFallback />}>
-            <AccountOrderHistoryPanel
-              clerkUserId={session.userId}
-              mode="compact"
-            />
-          </Suspense>
+          <div className="min-h-[460px] sm:min-h-[560px]">
+            <Suspense fallback={<AccountOrderHistoryFallback />}>
+              <AccountOrderHistoryPanel
+                clerkUserId={session.userId}
+                mode="compact"
+              />
+            </Suspense>
+          </div>
         </section>
       </div>
     </main>
