@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { memo, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 
 import {
   FALLBACK_PRODUCT_IMAGE,
@@ -29,6 +29,9 @@ function ProductCardComponent({
   const timeoutRef = useRef<number | null>(null);
   const image = product.images[0] ?? FALLBACK_PRODUCT_IMAGE;
   const reversed = index % 2 === 1;
+  useEffect(() => () => {
+    if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
+  }, []);
 
   const handleAdd = () => {
     if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
@@ -59,7 +62,6 @@ function ProductCardComponent({
                   src={image.url}
                   alt={image.alt || product.name}
                   fill
-                  priority={index < 2}
                   quality={75}
                   placeholder="blur"
                   blurDataURL={PRODUCT_IMAGE_BLUR_DATA_URL}
@@ -70,26 +72,11 @@ function ProductCardComponent({
 
               <div className="absolute inset-0 z-[2] bg-gradient-to-t from-[color:var(--ink)]/22 via-transparent to-transparent opacity-50 transition duration-200 ease-editorial group-hover:opacity-85" />
 
-              <div className="pointer-events-none absolute inset-x-4 bottom-4 z-[3] translate-y-2 opacity-0 transition duration-200 ease-editorial group-hover:translate-y-0 group-hover:opacity-100 motion-reduce:translate-y-0 motion-reduce:opacity-100">
+              <div className="pointer-events-none absolute inset-x-4 bottom-4 z-[3] translate-y-2 opacity-0 transition duration-200 ease-editorial group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100 motion-reduce:translate-y-0 motion-reduce:opacity-100">
                 <div className="flex items-center justify-between gap-2">
                   <span className="rounded-full border border-[color:var(--paper)]/35 bg-[color:var(--ink)]/12 px-3 py-1.5 text-[10px] uppercase tracking-[0.14em] text-[color:var(--paper)] backdrop-blur-sm">
                     Ver pieza
                   </span>
-                  <button
-                    type="button"
-                    onClick={(event) => {
-                      event.preventDefault();
-                      handleAdd();
-                    }}
-                    aria-label={`Agregar ${product.name} al carrito`}
-                    className={`pointer-events-auto rounded-full border px-3 py-1.5 text-[10px] uppercase tracking-[0.14em] text-[color:var(--paper)] backdrop-blur-sm transition duration-200 ease-editorial ${
-                      pressed
-                        ? "border-[color:var(--accent-gold)]/40 bg-[color:var(--accent-gold)]/20"
-                        : "border-[color:var(--paper)]/35 bg-[color:var(--ink)]/12 hover:bg-[color:var(--ink)]/20"
-                    } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--paper)]/45`}
-                  >
-                    Agregar
-                  </button>
                 </div>
               </div>
             </figure>
@@ -133,15 +120,16 @@ function ProductCardComponent({
 
             <button
               type="button"
+              disabled={product.inventory === 0}
               onClick={handleAdd}
-              aria-label={`Agregar ${product.name} al carrito`}
+              aria-label={product.inventory === 0 ? `${product.name}: agotado` : `Agregar ${product.name} al carrito`}
               className={`inline-flex items-center [font-family:var(--font-inter)] text-xs uppercase tracking-[0.14em] transition duration-200 ease-editorial ${
                 pressed
                   ? "text-[color:var(--accent-gold)]"
                   : "text-[color:var(--ink)] hover:opacity-70"
               } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--focus-ring)]`}
             >
-              Agregar
+              {product.inventory === 0 ? "Agotado" : "Agregar"}
             </button>
           </div>
         </div>

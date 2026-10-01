@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import PolicyPage from "../../components/legal/PolicyPage";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/terminos" },
   title: "Términos y condiciones",
   description:
     "Condiciones de uso de la tienda web de Galia Luna y lineamientos para compras coordinadas por WhatsApp.",

@@ -10,14 +10,13 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { memo, useEffect, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 
 import {
   calculateCartCount,
   calculateCartTotal,
   useCartStore,
 } from "../../store/cartStore";
-import { WHATSAPP_OWNER_NUMBER } from "../../lib/contact";
 import {
   FALLBACK_PRODUCT_IMAGE,
   PRODUCT_IMAGE_BLUR_DATA_URL,
@@ -26,31 +25,7 @@ import {
 import WhatsAppCheckoutDialog from "./WhatsAppCheckoutDialog";
 import type { WhatsAppCheckoutSubmitResult } from "./WhatsAppCheckoutDialog";
 import ProgressiveImage from "./ProgressiveImage";
-
-function buildWhatsAppMessage(
-  items: ReturnType<typeof useCartStore.getState>["items"],
-  total: number,
-) {
-  const lines = items.map(
-    (item) => `- ${item.quantity}x ${item.name} (${formatDOP(item.price)})`,
-  );
-
-  return [
-    "Hola Galia Luna, quiero confirmar este pedido de la web:",
-    ...lines,
-    `Total estimado: ${formatDOP(total)}`,
-    "Compárteme por favor formas de pago, entrega y disponibilidad.",
-  ].join("\n");
-}
-
-function buildWhatsAppCheckoutUrl(
-  items: ReturnType<typeof useCartStore.getState>["items"],
-  total: number,
-) {
-  return `https://wa.me/${WHATSAPP_OWNER_NUMBER}?text=${encodeURIComponent(
-    buildWhatsAppMessage(items, total),
-  )}`;
-}
+import useModalAccessibility from "./useModalAccessibility";
 
 interface CartLineItemProps {
   item: ReturnType<typeof useCartStore.getState>["items"][number];
@@ -95,29 +70,30 @@ const CartLineItem = memo(function CartLineItem({
             type="button"
             onClick={() => onRemove(item.id)}
             aria-label={`Eliminar ${item.name}`}
-            className="inline-flex h-7 w-7 items-center justify-center border border-transparent text-[color:var(--ink-soft)] transition hover:border-[color:var(--line)] hover:text-[color:var(--ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--focus-ring)]"
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center border border-transparent text-[color:var(--ink-soft)] transition hover:border-[color:var(--line)] hover:text-[color:var(--ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--focus-ring)]"
           >
             <Trash2 className="h-3.5 w-3.5" />
           </button>
         </div>
 
-        <div className="mt-3 flex items-end justify-between gap-3">
+        <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
           <div className="inline-flex items-center border border-[color:var(--line)] bg-[color:var(--bg-soft)]">
             <button
               type="button"
               onClick={() => onDecrease(item.id, item.quantity)}
-              className="inline-flex h-8 w-8 items-center justify-center text-[color:var(--ink)] transition hover:bg-[color:var(--brand-sand)]/75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--focus-ring)]"
+              className="inline-flex h-10 w-10 items-center justify-center text-[color:var(--ink)] transition hover:bg-[color:var(--brand-sand)]/75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--focus-ring)]"
               aria-label={`Reducir ${item.name}`}
             >
               <Minus className="h-3.5 w-3.5" />
             </button>
-            <span className="min-w-8 text-center text-sm text-[color:var(--ink)]">
+            <span className="min-w-8 text-center text-sm tabular-nums text-[color:var(--ink)]">
               {item.quantity}
             </span>
             <button
               type="button"
+              disabled={item.quantity >= Math.min(99, item.inventory ?? 99)}
               onClick={() => onIncrease(item.id, item.quantity)}
-              className="inline-flex h-8 w-8 items-center justify-center text-[color:var(--ink)] transition hover:bg-[color:var(--brand-sand)]/75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--focus-ring)]"
+              className="inline-flex h-10 w-10 items-center justify-center text-[color:var(--ink)] transition hover:bg-[color:var(--brand-sand)]/75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--focus-ring)]"
               aria-label={`Aumentar ${item.name}`}
             >
               <Plus className="h-3.5 w-3.5" />
@@ -141,6 +117,7 @@ const CartLineItem = memo(function CartLineItem({
 export default function CartDrawer() {
   const prefersReducedMotion = useReducedMotion();
   const [hasMounted, setHasMounted] = useState(false);
+  const dialogRef = useRef<HTMLElement>(null);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [lastOrderSubmission, setLastOrderSubmission] =
     useState<WhatsAppCheckoutSubmitResult | null>(null);
@@ -157,21 +134,11 @@ export default function CartDrawer() {
     setHasMounted(true);
   }, []);
 
-  useEffect(() => {
-    if (!hasMounted || !isOpen) return;
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") closeCart();
-    };
-
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [closeCart, hasMounted, isOpen]);
-
   const safeItems = hasMounted ? items : [];
   const safeIsOpen = hasMounted ? isOpen : false;
   const total = calculateCartTotal(safeItems);
   const totalItems = calculateCartCount(safeItems);
+  useModalAccessibility(dialogRef, safeIsOpen, closeCart);
 
   useEffect(() => {
     if (!safeIsOpen) return;
@@ -186,21 +153,32 @@ export default function CartDrawer() {
         type="button"
         onClick={openCart}
         aria-label={`Abrir pedido (${totalItems})`}
+        aria-haspopup="dialog"
+        aria-expanded={safeIsOpen}
+        tabIndex={safeIsOpen ? -1 : 0}
         className={`fixed bottom-4 right-4 z-40 inline-flex items-center gap-2 border border-[color:var(--line-strong)] bg-[color:var(--paper)] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)] shadow-[0_12px_28px_rgba(43,42,40,0.12)] transition duration-200 ease-editorial hover:bg-[color:var(--bg-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--focus-ring)] ${
           safeIsOpen ? "pointer-events-none opacity-0" : "opacity-100"
         }`}
       >
         <ShoppingBag className="h-3.5 w-3.5" />
-        Pedido ({totalItems})
+        <span>Pedido (<span className="inline-block min-w-[3ch] text-center tabular-nums">{totalItems}</span>)</span>
       </button>
 
       <AnimatePresence initial={false}>
         {safeIsOpen ? (
-          <motion.aside
+          <motion.div
             key="cart"
+            className="fixed inset-0 z-50 bg-[color:var(--ink)]/25"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            transition={{ duration: prefersReducedMotion ? 0 : 0.18 }}
+            onClick={(event) => { if (event.target === event.currentTarget) closeCart(); }}
+          >
+          <motion.aside
+            ref={dialogRef}
+            tabIndex={-1}
             role="dialog"
-            aria-modal="false"
-            aria-label="Tu pedido"
+            aria-modal="true"
+            aria-labelledby="cart-title"
             initial={
               prefersReducedMotion ? { opacity: 1 } : { opacity: 0, x: 18 }
             }
@@ -209,7 +187,7 @@ export default function CartDrawer() {
             }
             exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, x: 18 }}
             transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed bottom-3 right-3 top-3 z-50 flex w-[min(420px,calc(100vw-1rem))] flex-col border border-[color:var(--line-strong)] bg-[color:var(--panel)] shadow-[0_24px_70px_rgba(43,42,40,0.16)]"
+            className="absolute bottom-3 right-3 top-3 flex w-[min(420px,calc(100vw-1rem))] flex-col border border-[color:var(--line-strong)] bg-[color:var(--panel)] shadow-[0_24px_70px_rgba(43,42,40,0.16)]"
           >
             <header className="border-b border-[color:var(--line)] px-4 py-4">
               <div className="flex items-start justify-between gap-3">
@@ -217,7 +195,7 @@ export default function CartDrawer() {
                   <p className="text-[10px] uppercase tracking-[0.16em] text-[color:var(--ink-soft)]">
                     Resumen del pedido
                   </p>
-                  <h2 className="mt-1 [font-family:var(--font-playfair)] text-[1.7rem] leading-[0.95] tracking-[-0.02em] text-[color:var(--ink)]">
+                  <h2 id="cart-title" className="mt-1 [font-family:var(--font-playfair)] text-[1.7rem] leading-[0.95] tracking-[-0.02em] text-[color:var(--ink)]">
                     Tu pedido ({totalItems})
                   </h2>
                   <p className="mt-1 text-xs text-[color:var(--ink-soft)]">
@@ -229,27 +207,27 @@ export default function CartDrawer() {
                   type="button"
                   onClick={closeCart}
                   aria-label="Cerrar pedido"
-                  className="inline-flex h-8 w-8 items-center justify-center border border-[color:var(--line)] bg-[color:var(--paper)] text-[color:var(--ink)] transition hover:bg-[color:var(--bg-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--focus-ring)]"
+                  className="inline-flex h-10 w-10 items-center justify-center border border-[color:var(--line)] bg-[color:var(--paper)] text-[color:var(--ink)] transition hover:bg-[color:var(--bg-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--focus-ring)]"
                 >
                   <X className="h-4 w-4" />
                 </button>
               </div>
             </header>
 
-            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4">
               {lastOrderSubmission?.ok ? (
                 <div className="mb-4 rounded-[16px] border border-[color:var(--brand-sage)]/35 bg-[color:var(--brand-sage)]/12 p-4">
                   <p className="text-[10px] uppercase tracking-[0.16em] text-[color:var(--ink-soft)]">
-                    Pedido enviado
+                    Pedido preparado
                   </p>
-                  <p className="mt-2 text-sm leading-6 text-[color:var(--ink)]">
-                    Tu pedido ya fue enviado por WhatsApp y quedo registrado en la web
-                    {lastOrderSubmission.orderCode
-                      ? ` con codigo ${lastOrderSubmission.orderCode}.`
-                      : "."}
+                  <p className="mt-2 text-sm leading-6 text-[color:var(--ink)] [overflow-wrap:anywhere]">
+                    Tu pedido está preparado. Confirma el envío del mensaje en WhatsApp.
+                    {lastOrderSubmission.persisted && lastOrderSubmission.orderCode
+                      ? ` También quedó registrado en la web con código ${lastOrderSubmission.orderCode}.`
+                      : " Conservamos las piezas en tu pedido para que puedas volver a intentarlo."}
                   </p>
                   <div className="mt-3 flex flex-wrap gap-2">
-                    {lastOrderSubmission.orderCode && lastOrderSubmission.signedIn ? (
+                    {lastOrderSubmission.persisted && lastOrderSubmission.orderCode && lastOrderSubmission.signedIn ? (
                       <Link
                         href={`/mi-cuenta/pedidos/${encodeURIComponent(lastOrderSubmission.orderCode)}`}
                         onClick={closeCart}
@@ -336,6 +314,7 @@ export default function CartDrawer() {
               </div>
             </footer>
           </motion.aside>
+          </motion.div>
         ) : null}
       </AnimatePresence>
 
@@ -345,7 +324,7 @@ export default function CartDrawer() {
         items={safeItems}
         source="cart"
         onSubmitted={(result) => {
-          if (result.ok) {
+          if (result.ok && result.persisted) {
             clearCart();
           }
           setLastOrderSubmission(result);

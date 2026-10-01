@@ -2,6 +2,7 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import { Cormorant_Garamond, Inter } from "next/font/google";
 
+import { SITE_URL } from "../lib/seo";
 import "./globals.css";
 
 const playfair = Cormorant_Garamond({
@@ -18,6 +19,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   applicationName: "Galia Luna",
   title: {
     default: "Galia Luna | Joyería fina",

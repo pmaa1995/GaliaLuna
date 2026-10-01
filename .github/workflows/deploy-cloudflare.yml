@@ -45,11 +45,17 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Validate before deployment
+        run: |
+          npm run lint
+          npm run typecheck
+          npm test
 
       - name: Build and deploy to Cloudflare Workers
         run: npm run cf:deploy

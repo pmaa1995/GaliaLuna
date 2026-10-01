@@ -55,11 +55,11 @@ function normalizeImages(input: unknown, fallbackAlt: string): ProductImage[] {
       if (!url) return null;
 
       const width =
-        typeof candidate.width === "number" && Number.isFinite(candidate.width)
+        typeof candidate.width === "number" && Number.isFinite(candidate.width) && candidate.width > 0
           ? candidate.width
           : 1200;
       const height =
-        typeof candidate.height === "number" && Number.isFinite(candidate.height)
+        typeof candidate.height === "number" && Number.isFinite(candidate.height) && candidate.height > 0
           ? candidate.height
           : 1200;
 
@@ -95,9 +95,11 @@ export function mapSanityProduct(value: unknown): Product | null {
     return null;
   }
 
-  const price =
-    typeof raw.price === "number" && Number.isFinite(raw.price) ? raw.price : 0;
-  const currency = raw.currency === "DOP" ? "DOP" : "DOP";
+  // Invalid prices or a different currency must not become free DOP products.
+  if (typeof raw.price !== "number" || !Number.isFinite(raw.price) || raw.price < 0 ||
+      (raw.currency !== undefined && raw.currency !== null && raw.currency !== "DOP")) return null;
+  const price = raw.price;
+  const currency = "DOP";
   const category = normalizeCategory(raw.category);
   const description =
     typeof raw.description === "string" && raw.description.trim()

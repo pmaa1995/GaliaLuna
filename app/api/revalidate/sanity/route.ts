@@ -62,6 +62,8 @@ export async function POST(request: Request) {
   }
 
   revalidatePath("/");
+  revalidatePath("/sitemap.xml");
+  revalidatePath("/product/[slug]", "page");
 
   const slugs = extractSlugs(payload);
   for (const slug of slugs) {
@@ -71,7 +73,7 @@ export async function POST(request: Request) {
   return NextResponse.json({
     ok: true,
     revalidatedTags: SANITY_CACHE_TAG_LIST,
-    revalidatedPaths: ["/", ...slugs.map((slug) => `/product/${slug}`)],
+    revalidatedPaths: ["/", "/sitemap.xml", "/product/[slug]", ...slugs.map((slug) => `/product/${slug}`)],
   });
 }
 

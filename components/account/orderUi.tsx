@@ -104,7 +104,7 @@ export function InProgressOrderCard({
           <p className="text-[10px] uppercase tracking-[0.16em] text-[color:var(--ink-soft)]">
             Pedido en progreso
           </p>
-          <p className="mt-2 text-base font-semibold text-[color:var(--ink)]">
+          <p className="max-w-full break-all mt-2 text-base font-semibold text-[color:var(--ink)]">
             {order.orderCode}
           </p>
           <p className="mt-1 text-xs text-[color:var(--ink-soft)]">
@@ -151,7 +151,7 @@ export function CustomerOrderDetailCard({
           <p className="text-[10px] uppercase tracking-[0.16em] text-[color:var(--ink-soft)]">
             Pedido
           </p>
-          <h2 className="mt-2 [font-family:var(--font-playfair)] text-xl leading-[0.95] text-[color:var(--ink)] sm:text-2xl">
+          <h2 className="max-w-full break-all mt-2 [font-family:var(--font-playfair)] text-xl leading-[0.95] text-[color:var(--ink)] sm:text-2xl">
             {order.orderCode}
           </h2>
           <p className="mt-1 text-xs text-[color:var(--ink-soft)]">

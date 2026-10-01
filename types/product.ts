@@ -50,6 +50,7 @@ export interface CartProductSnapshot {
   imageUrl: string;
   imageAlt: string;
   category: ProductCategory;
+  inventory?: number | null;
 }
 
 export const FALLBACK_PRODUCT_IMAGE: ProductImage = {
@@ -73,11 +74,13 @@ export function toCartProductSnapshot(product: Product): CartProductSnapshot {
     imageUrl: primaryImage.url,
     imageAlt: primaryImage.alt,
     category: product.category,
+    inventory: product.inventory,
   };
 }
 
 export function formatDOP(amount: number): string {
   return `RD$${new Intl.NumberFormat("en-US", {
-    maximumFractionDigits: 0,
+    minimumFractionDigits: Number.isInteger(amount) ? 0 : 2,
+    maximumFractionDigits: 2,
   }).format(amount)}`;
 }

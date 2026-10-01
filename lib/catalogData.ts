@@ -52,16 +52,19 @@ function mapSanityHomeShowcase(
     return getResolvedHomeShowcase(activeProducts, localHomeSettings);
   }
 
+  const activeById = new Map(activeProducts.map((product) => [product._id, product]));
   const heroProducts = Array.isArray(input.heroProducts)
     ? dedupeProducts(
         input.heroProducts
           .map((value) => mapSanityProduct(value))
+          .map((product) => product ? activeById.get(product._id) : undefined)
           .filter((product): product is Product => Boolean(product))
           .filter((product) => product.isActive),
       ).slice(0, 3)
     : [];
 
-  const featuredProduct = mapSanityProduct(input.featuredProduct);
+  const featuredReference = mapSanityProduct(input.featuredProduct);
+  const featuredProduct = featuredReference ? activeById.get(featuredReference._id) : undefined;
 
   if (heroProducts.length === 0 && !featuredProduct) {
     return getResolvedHomeShowcase(activeProducts, localHomeSettings);
@@ -92,7 +95,7 @@ async function fetchSanityProducts(): Promise<Product[]> {
       },
     },
   );
-  if (!Array.isArray(raw)) return [];
+  if (!Array.isArray(raw)) throw new Error("Invalid catalog response");
 
   const products = raw
     .map((item) => mapSanityProduct(item))
@@ -122,33 +125,30 @@ async function fetchSanityHomeShowcase(
   return mapSanityHomeShowcase(raw, activeProducts);
 }
 
+// Checkout must read the origin, bypassing both the Sanity CDN and Next cache.
+export async function getCheckoutProducts(): Promise<Product[]> {
+  if (!isSanityEnvironmentConfigured) throw new Error("Catalog is not configured");
+  const raw = await sanityClient.withConfig({ useCdn: false }).fetch<unknown[]>(allProductsQuery, {}, { cache: "no-store" });
+  if (!Array.isArray(raw)) throw new Error("Invalid catalog response");
+  return dedupeProducts(raw.map(mapSanityProduct).filter((product): product is Product => Boolean(product)));
+}
+
 export const getCatalogSource = cache(async (): Promise<CatalogSource> => {
-  try {
-    const sanityProducts = await fetchSanityProducts();
-
-    if (sanityProducts.length > 0) {
-      const activeProducts = filterActiveProducts(sanityProducts);
-      const homeShowcase = await fetchSanityHomeShowcase(activeProducts);
-
-      return {
-        allProducts: sanityProducts,
-        activeProducts,
-        homeShowcase,
-        source: "sanity",
-      };
-    }
-  } catch (error) {
-    console.warn("Sanity fetch failed, using local catalog fallback.", error);
+  if (!isSanityEnvironmentConfigured) {
+    const activeProducts = filterActiveProducts(catalogProducts);
+    return { allProducts: catalogProducts, activeProducts, homeShowcase: getResolvedHomeShowcase(activeProducts, localHomeSettings), source: "local" };
   }
 
-  const activeProducts = filterActiveProducts(catalogProducts);
-
-  return {
-    allProducts: catalogProducts,
-    activeProducts,
-    homeShowcase: getResolvedHomeShowcase(activeProducts, localHomeSettings),
-    source: "local",
-  };
+  // An empty published catalog is valid. A CMS outage must never sell demo items.
+  const sanityProducts = await fetchSanityProducts();
+  const activeProducts = filterActiveProducts(sanityProducts);
+  let homeShowcase = getResolvedHomeShowcase(activeProducts, localHomeSettings);
+  try {
+    homeShowcase = await fetchSanityHomeShowcase(activeProducts);
+  } catch {
+    console.warn("Home curation unavailable; using the published catalog.");
+  }
+  return { allProducts: sanityProducts, activeProducts, homeShowcase, source: "sanity" };
 });
 
 export async function getHomePageData() {
@@ -171,30 +171,12 @@ export async function getProductPageData(slug: string) {
 }
 
 export async function getActiveProductSlugs(): Promise<string[]> {
-  if (isSanityEnvironmentConfigured) {
-    try {
-      const rows = await sanityClient.fetch<Array<{ slug?: string }>>(
-        activeProductSlugsQuery,
-        {},
-        {
-          next: {
-            revalidate: 60,
-            tags: [SANITY_CACHE_TAGS.productSlugs],
-          },
-        },
-      );
-
-      const slugs = (rows ?? [])
-        .map((row) => row.slug)
-        .filter((slug): slug is string => Boolean(slug));
-
-      if (slugs.length > 0) {
-        return Array.from(new Set(slugs));
-      }
-    } catch (error) {
-      console.warn("Sanity slug fetch failed, using local catalog fallback.", error);
-    }
+  if (!isSanityEnvironmentConfigured) {
+    return filterActiveProducts(catalogProducts).map((product) => product.slug.current);
   }
-
-  return filterActiveProducts(catalogProducts).map((product) => product.slug.current);
+  const rows = await sanityClient.fetch<Array<{ slug?: string }>>(activeProductSlugsQuery, {}, {
+    next: { revalidate: 60, tags: [SANITY_CACHE_TAGS.productSlugs] },
+  });
+  if (!Array.isArray(rows)) throw new Error("Invalid catalog response");
+  return Array.from(new Set(rows.map((row) => row.slug).filter((slug): slug is string => typeof slug === "string" && slug.length > 0)));
 }

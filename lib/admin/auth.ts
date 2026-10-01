@@ -15,15 +15,15 @@ function parseEmailAllowlist(raw: string | undefined) {
   );
 }
 
-function getUserEmails(user: ClerkUserLike) {
+function getVerifiedUserEmails(user: ClerkUserLike) {
   if (!user) return [];
 
   return [
-    user.primaryEmailAddress?.emailAddress,
-    ...(user.emailAddresses?.map((email) => email.emailAddress) ?? []),
+    user.primaryEmailAddress,
+    ...(user.emailAddresses ?? []),
   ]
-    .filter((email): email is string => Boolean(email))
-    .map((email) => email.trim().toLowerCase());
+    .filter((email) => email?.verification?.status === "verified")
+    .map((email) => email!.emailAddress.trim().toLowerCase());
 }
 
 function readRoleFlag(value: unknown) {
@@ -34,7 +34,7 @@ export function isAdminFromClerkUser(user: ClerkUserLike) {
   if (!user) return false;
 
   const allowlist = parseEmailAllowlist(process.env.ADMIN_EMAIL_ALLOWLIST);
-  const userEmails = getUserEmails(user);
+  const userEmails = getVerifiedUserEmails(user);
 
   if (userEmails.some((email) => allowlist.has(email))) {
     return true;
@@ -46,14 +46,15 @@ export function isAdminFromClerkUser(user: ClerkUserLike) {
           (user.publicMetadata as Record<string, unknown>).galiaLunaRole,
         )
       : "";
-  const unsafeRole =
-    user.unsafeMetadata && typeof user.unsafeMetadata === "object"
+  // Authorization must only use metadata that users cannot write from the frontend.
+  const privateRole =
+    user.privateMetadata && typeof user.privateMetadata === "object"
       ? readRoleFlag(
-          (user.unsafeMetadata as Record<string, unknown>).galiaLunaRole,
+          (user.privateMetadata as Record<string, unknown>).galiaLunaRole,
         )
       : "";
 
-  return publicRole === "admin" || unsafeRole === "admin";
+  return publicRole === "admin" || privateRole === "admin";
 }
 
 export async function requireAdminUser(): Promise<ClerkUser> {

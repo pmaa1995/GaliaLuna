@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import PolicyPage from "../../components/legal/PolicyPage";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/cambios-y-devoluciones" },
   title: "Cambios y devoluciones",
   description:
     "Lineamientos de cambios, devoluciones y revisión de piezas en Galia Luna.",

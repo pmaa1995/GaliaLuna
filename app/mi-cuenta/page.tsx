@@ -134,7 +134,7 @@ function textareaClassName() {
 export default async function AccountPage({
   searchParams,
 }: {
-  searchParams?: PageSearchParams;
+  searchParams?: Promise<PageSearchParams>;
 }) {
   if (!clerkEnabled) {
     return (
@@ -174,7 +174,8 @@ export default async function AccountPage({
   }
 
   const user = await currentUser();
-  const perfilStatus = getPerfilStatus(searchParams);
+  const resolvedSearchParams = await searchParams;
+  const perfilStatus = getPerfilStatus(resolvedSearchParams);
 
   const primaryEmail =
     user?.primaryEmailAddress?.emailAddress ?? user?.emailAddresses?.[0]?.emailAddress ?? "";
@@ -185,7 +186,7 @@ export default async function AccountPage({
 
   const profile = readProfileFromMetadata(user?.unsafeMetadata);
   const isAdmin = isAdminFromClerkUser(user);
-  const selectedOrderCode = getPedidoCode(searchParams);
+  const selectedOrderCode = getPedidoCode(resolvedSearchParams);
 
   if (selectedOrderCode) {
     redirect(`/mi-cuenta/pedidos/${encodeURIComponent(selectedOrderCode)}`);

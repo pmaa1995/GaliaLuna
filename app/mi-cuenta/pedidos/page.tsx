@@ -24,7 +24,7 @@ function getHistoryPage(searchParams?: PageSearchParams) {
 export default async function AccountOrdersPage({
   searchParams,
 }: {
-  searchParams?: PageSearchParams;
+  searchParams?: Promise<PageSearchParams>;
 }) {
   if (!clerkEnabled) {
     redirect("/mi-cuenta");
@@ -37,7 +37,7 @@ export default async function AccountOrdersPage({
     );
   }
 
-  const page = getHistoryPage(searchParams);
+  const page = getHistoryPage(await searchParams);
 
   return (
     <main className="mx-auto min-h-[calc(100vh-4rem)] max-w-[1100px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">

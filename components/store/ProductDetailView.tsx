@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import {
@@ -54,6 +54,8 @@ export default function ProductDetailView({
   );
 
   const [activeIndex, setActiveIndex] = useState(0);
+  const [hasMounted, setHasMounted] = useState(false);
+  useEffect(() => setHasMounted(true), []);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [lastDirectOrder, setLastDirectOrder] =
     useState<WhatsAppCheckoutSubmitResult | null>(null);
@@ -125,12 +127,12 @@ export default function ProductDetailView({
               className="inline-flex items-center gap-2 border border-[color:var(--line-strong)] bg-[color:var(--paper)] px-3 py-2 text-[11px] font-medium uppercase tracking-[0.16em] text-[color:var(--ink)] transition hover:bg-[color:var(--bg-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--focus-ring)]"
             >
               <ShoppingBag className="h-3.5 w-3.5" />
-              Pedido ({cartCount})
+              <span>Pedido (<span className="inline-block min-w-[3ch] text-center tabular-nums">{hasMounted ? cartCount : 0}</span>)</span>
             </button>
           </div>
         </header>
 
-        <main className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,0.92fr)] xl:grid-cols-[minmax(0,1.02fr)_24rem]">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,0.92fr)] xl:grid-cols-[minmax(0,1.02fr)_24rem]">
           <section className="grid gap-4">
             <div className="border border-[color:var(--line)] bg-[color:var(--paper)] p-4 sm:p-5">
               <div className="mb-4 flex items-center justify-between gap-3 border-b border-[color:var(--line)] pb-3">
@@ -138,7 +140,7 @@ export default function ProductDetailView({
                   <p className="text-[10px] uppercase tracking-[0.18em] text-[color:var(--ink-soft)]">
                     Fotos de la pieza
                   </p>
-                  <p className="mt-1 text-xs text-[color:var(--ink-soft)]">
+                  <p role="status" aria-live="polite" className="mt-1 text-xs text-[color:var(--ink-soft)]">
                     {hasMultipleImages
                       ? `Imagen ${activeIndex + 1} de ${gallery.length}`
                       : "1 imagen disponible"}
@@ -180,6 +182,7 @@ export default function ProductDetailView({
                         type="button"
                         onClick={() => setActiveIndex(idx)}
                         aria-label={`Ver imagen ${idx + 1}`}
+                        aria-pressed={activeIndex === idx}
                         className={`group relative overflow-hidden rounded-[12px] border bg-[color:var(--bg-soft)] p-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--focus-ring)] ${
                           activeIndex === idx
                             ? "border-[color:var(--line-strong)]"
@@ -194,7 +197,7 @@ export default function ProductDetailView({
                             quality={75}
                             placeholder="blur"
                             blurDataURL={PRODUCT_IMAGE_BLUR_DATA_URL}
-                            sizes="84px"
+                            sizes="(max-width: 1023px) calc((100vw - 120px) / 4), 68px"
                             className="object-cover transition duration-200 group-hover:scale-[1.02]"
                           />
                         </div>
@@ -210,7 +213,7 @@ export default function ProductDetailView({
                         src={activeImage.url}
                         alt={activeImage.alt || product.name}
                         fill
-                        priority
+                        priority={activeIndex === 0}
                         quality={75}
                         placeholder="blur"
                         blurDataURL={PRODUCT_IMAGE_BLUR_DATA_URL}
@@ -250,7 +253,7 @@ export default function ProductDetailView({
                   {formatDOP(product.price)}
                 </p>
                 <p className="text-xs text-[color:var(--ink-soft)]">
-                  {product.inventory ? `${product.inventory} disponibles` : "Disponible"}
+                  {product.inventory === 0 ? "Agotado" : product.inventory ? `${product.inventory} disponibles` : "Consultar disponibilidad"}
                 </p>
               </div>
 
@@ -261,20 +264,22 @@ export default function ProductDetailView({
               <div className="mt-5 grid gap-2">
                 <button
                   type="button"
+                  disabled={product.inventory === 0}
                   onClick={() => setIsCheckoutOpen(true)}
                   className="inline-flex items-center justify-center gap-2 border border-[color:var(--brand-coral)]/35 bg-[color:var(--brand-coral)] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)] transition hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--brand-coral)]/45"
                 >
                   <MessageCircle className="h-3.5 w-3.5" />
-                  Comprar por WhatsApp
+                  {product.inventory === 0 ? "Agotado" : "Comprar por WhatsApp"}
                 </button>
 
                 <button
                   type="button"
+                  disabled={product.inventory === 0}
                   onClick={handleAddToCart}
                   className="inline-flex items-center justify-center gap-2 border border-[color:var(--line-strong)] bg-[color:var(--paper)] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)] transition hover:bg-[color:var(--bg-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--focus-ring)]"
                 >
                   <Plus className="h-3.5 w-3.5" />
-                  Agregar al pedido
+                  {product.inventory === 0 ? "Agotado" : "Agregar al pedido"}
                 </button>
 
                 <button
@@ -290,16 +295,16 @@ export default function ProductDetailView({
               {lastDirectOrder?.ok ? (
                 <div className="mt-4 rounded-[14px] border border-[color:var(--brand-sage)]/35 bg-[color:var(--brand-sage)]/10 p-4">
                   <p className="text-[10px] uppercase tracking-[0.16em] text-[color:var(--ink-soft)]">
-                    Pedido enviado
+                    Pedido preparado
                   </p>
-                  <p className="mt-2 text-sm leading-7 text-[color:var(--ink)]">
-                    Tu pedido fue enviado por WhatsApp y quedo registrado
-                    {lastDirectOrder.orderCode
-                      ? ` con codigo ${lastDirectOrder.orderCode}.`
-                      : "."}
+                  <p className="mt-2 text-sm leading-7 text-[color:var(--ink)] [overflow-wrap:anywhere]">
+                    Tu pedido está preparado. Confirma el envío del mensaje en WhatsApp.
+                    {lastDirectOrder.persisted && lastDirectOrder.orderCode
+                      ? ` También quedó registrado en la web con código ${lastDirectOrder.orderCode}.`
+                      : " Puedes volver a intentarlo si el mensaje no llegó."}
                   </p>
                   <div className="mt-3 flex flex-wrap gap-2">
-                    {lastDirectOrder.orderCode && lastDirectOrder.signedIn ? (
+                    {lastDirectOrder.persisted && lastDirectOrder.orderCode && lastDirectOrder.signedIn ? (
                       <Link
                         href={`/mi-cuenta/pedidos/${encodeURIComponent(lastDirectOrder.orderCode)}`}
                         className="inline-flex items-center gap-2 rounded-full border border-[color:var(--line)] bg-[color:var(--paper)] px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)] transition hover:bg-[color:var(--bg-soft)]"
@@ -307,8 +312,8 @@ export default function ProductDetailView({
                         Ver pedido en progreso
                       </Link>
                     ) : null}
-                    {lastDirectOrder.orderCode && !lastDirectOrder.signedIn ? (
-                      <span className="inline-flex items-center rounded-full border border-[color:var(--line)] bg-[color:var(--paper)] px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink-soft)]">
+                    {lastDirectOrder.persisted && lastDirectOrder.orderCode && !lastDirectOrder.signedIn ? (
+                      <span className="block max-w-full break-all rounded-full border border-[color:var(--line)] bg-[color:var(--paper)] px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink-soft)]">
                         Codigo: {lastDirectOrder.orderCode}
                       </span>
                     ) : null}
@@ -320,7 +325,7 @@ export default function ProductDetailView({
                 <p className="text-[10px] uppercase tracking-[0.18em] text-[color:var(--ink-soft)]">
                   Atención personalizada
                 </p>
-                <p className="mt-2 text-sm leading-7 text-[color:var(--ink)]">
+                <p className="mt-2 text-sm leading-7 text-[color:var(--ink)] [overflow-wrap:anywhere]">
                   Te ayudamos a confirmar combinaciones, disponibilidad y forma
                   de entrega por WhatsApp.
                 </p>
@@ -345,7 +350,7 @@ export default function ProductDetailView({
               </div>
             </div>
           </aside>
-        </main>
+        </div>
 
         {relatedProducts.length > 0 ? (
           <section className="mt-12 border-t border-[color:var(--line)] pt-8">
@@ -389,7 +394,7 @@ export default function ProductDetailView({
                           quality={75}
                           placeholder="blur"
                           blurDataURL={PRODUCT_IMAGE_BLUR_DATA_URL}
-                          sizes="128px"
+                          sizes="(max-width: 639px) calc(100vw - 64px), 128px"
                           className="object-cover"
                         />
                       </div>
@@ -433,6 +438,7 @@ export default function ProductDetailView({
                         </a>
                         <button
                           type="button"
+                          disabled={item.inventory === 0}
                           onClick={() => {
                             addItem(toCartProductSnapshot(item), 1);
                             openCart();
@@ -440,7 +446,7 @@ export default function ProductDetailView({
                           className="inline-flex items-center gap-2 border border-[color:var(--line)] bg-[color:var(--bg-soft)] px-3 py-2 text-[11px] font-medium uppercase tracking-[0.16em] text-[color:var(--ink)] transition hover:bg-[color:var(--brand-sand)]/75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--focus-ring)]"
                         >
                           <Plus className="h-3.5 w-3.5" />
-                          Agregar
+                          {item.inventory === 0 ? "Agotado" : "Agregar"}
                         </button>
                       </div>
                     </div>

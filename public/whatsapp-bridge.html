@@ -2,6 +2,8 @@
 <html lang="es">
   <head>
     <meta charset="utf-8" />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="robots" content="noindex, nofollow" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Abriendo WhatsApp | Galia Luna</title>
     <style>
@@ -83,7 +85,24 @@
           return;
         }
 
-        manualLink.href = target;
+        let safeTarget;
+        try {
+          const url = new URL(target);
+          const allowedApi = url.hostname === "api.whatsapp.com" && url.pathname === "/send";
+          const allowedShort = url.hostname === "wa.me" && /^\/\d{7,15}\/?$/.test(url.pathname);
+          if (url.protocol !== "https:" || url.username || url.password || url.port ||
+              url.hash || (!allowedApi && !allowedShort)) throw new Error("Invalid target");
+          if (allowedApi && !/^\d{7,15}$/.test(url.searchParams.get("phone") || "")) throw new Error("Invalid phone");
+          if ([...url.searchParams.keys()].some((key) => !["phone", "text"].includes(key))) throw new Error("Invalid parameter");
+          safeTarget = url.href;
+        } catch (_) {
+          message.textContent = "El enlace de WhatsApp no es valido. Vuelve a la tienda para continuar.";
+          return;
+        }
+
+        // Do not retain the message in the bridge address or expose it as a referrer.
+        window.history.replaceState(null, "", window.location.pathname);
+        manualLink.href = safeTarget;
 
         // If the browser opens WhatsApp in another tab and leaves this one behind,
         // auto-close this bridge tab after a short delay.
@@ -97,7 +116,7 @@
         }, 2200);
 
         setTimeout(function () {
-          window.location.replace(target);
+          window.location.replace(safeTarget);
         }, 80);
       })();
     </script>

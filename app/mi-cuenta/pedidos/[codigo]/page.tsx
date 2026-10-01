@@ -11,9 +11,9 @@ const clerkEnabled = Boolean(
 );
 
 type PageProps = {
-  params: {
+  params: Promise<{
     codigo: string;
-  };
+  }>;
 };
 
 function decodeOrderCode(value: string) {
@@ -25,6 +25,7 @@ function decodeOrderCode(value: string) {
 }
 
 export default async function AccountOrderDetailPage({ params }: PageProps) {
+  const { codigo } = await params;
   if (!clerkEnabled) {
     redirect("/mi-cuenta");
   }
@@ -32,11 +33,11 @@ export default async function AccountOrderDetailPage({ params }: PageProps) {
   const session = await auth();
   if (!session.userId) {
     redirect(
-      `/iniciar-sesion?redirect_url=${encodeURIComponent(`/mi-cuenta/pedidos/${params.codigo}`)}`,
+      `/iniciar-sesion?redirect_url=${encodeURIComponent(`/mi-cuenta/pedidos/${codigo}`)}`,
     );
   }
 
-  const orderCode = decodeOrderCode(params.codigo).trim();
+  const orderCode = decodeOrderCode(codigo).trim();
   if (!orderCode) {
     redirect("/mi-cuenta");
   }

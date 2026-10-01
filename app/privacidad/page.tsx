@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import PolicyPage from "../../components/legal/PolicyPage";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/privacidad" },
   title: "Política de privacidad",
   description:
     "Cómo Galia Luna utiliza y protege los datos compartidos durante el proceso de compra y atención por WhatsApp.",

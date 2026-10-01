@@ -22,11 +22,11 @@
     --panel: rgba(255, 255, 255, 0.95);
     --paper: #f1ece4;
     --ink: #2c2a27;
-    --ink-soft: #878078;
+    --ink-soft: #5e5851;
     --line: rgba(44, 42, 39, 0.11);
     --line-strong: rgba(44, 42, 39, 0.2);
     --metal: var(--brand-sage);
-    --focus-ring: rgba(75, 142, 128, 0.34);
+    --focus-ring: #255e52;
 
     /* backwards-compat variables used by older files still in repo */
     --border-warm: var(--line);
@@ -41,6 +41,7 @@
 
   html {
     scroll-behavior: smooth;
+    scrollbar-gutter: stable;
     overflow-x: clip;
   }
 
@@ -69,12 +70,41 @@
     -webkit-tap-highlight-color: transparent;
   }
 
+  :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 3px;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+
   img {
     user-select: none;
   }
 }
 
 @layer utilities {
+  .storefront [id] {
+    scroll-margin-top: 10.5rem;
+  }
+
+  .skip-link {
+    position: fixed;
+    top: 0.75rem;
+    left: 0.75rem;
+    z-index: 80;
+    padding: 0.75rem 1rem;
+    background: var(--paper);
+    color: var(--ink);
+    transform: translateY(-200%);
+  }
+
+  .skip-link:focus {
+    transform: translateY(0);
+  }
+
   .text-balance {
     text-wrap: balance;
   }

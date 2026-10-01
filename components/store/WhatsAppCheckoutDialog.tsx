@@ -4,12 +4,14 @@ import { MessageCircle, PackageCheck, UserRound, X } from "lucide-react";
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ChangeEvent,
   type FormEvent,
 } from "react";
 
 import type { CartItem } from "../../store/cartStore";
+import useModalAccessibility from "./useModalAccessibility";
 import { WHATSAPP_OWNER_NUMBER, WHATSAPP_PHONE_DISPLAY } from "../../lib/contact";
 import type {
   CheckoutSource,
@@ -219,7 +221,7 @@ function buildOrderMessage({
   return lines.join("\n");
 }
 
-async function saveOrderBeforeWhatsApp({
+export async function saveOrderBeforeWhatsApp({
   items,
   values,
   source,
@@ -231,6 +233,7 @@ async function saveOrderBeforeWhatsApp({
   try {
     const response = await fetch("/api/orders/whatsapp", {
       method: "POST",
+      signal: AbortSignal.timeout(20_000),
       headers: {
         "Content-Type": "application/json",
       },
@@ -250,6 +253,10 @@ async function saveOrderBeforeWhatsApp({
     });
 
     const data = (await response.json()) as CreateWhatsAppOrderResponse;
+    if (!response.ok || data?.ok !== true || data?.persisted !== true || typeof data.orderCode !== "string" || !data.orderCode) {
+      return { ok: false, persisted: false, orderCode: null,
+        error: typeof data?.error === "string" ? data.error : "No se pudo registrar el pedido. Intenta de nuevo." };
+    }
     return data;
   } catch (error) {
     console.error("No se pudo registrar el pedido antes de WhatsApp", error);
@@ -316,6 +323,9 @@ export default function WhatsAppCheckoutDialog({
   const [error, setError] = useState("");
   const [signedIn, setSignedIn] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const submittingRef = useRef(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useModalAccessibility(dialogRef, open, onClose, !isSubmitting);
 
   const total = useMemo(
     () => items.reduce((sum, item) => sum + item.price * item.quantity, 0),
@@ -332,27 +342,6 @@ export default function WhatsAppCheckoutDialog({
     setError("");
   }, [open]);
 
-  useEffect(() => {
-    if (!open) return;
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [open]);
-
-  useEffect(() => {
-    if (!open) return;
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [open, onClose]);
-
   if (!open) return null;
 
   const updateField =
@@ -366,6 +355,8 @@ export default function WhatsAppCheckoutDialog({
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (submittingRef.current) return;
+    setError("");
 
     const normalized = normalizeForm(formValues);
     const missingRequired = [
@@ -394,12 +385,21 @@ export default function WhatsAppCheckoutDialog({
     // after the async order-save request completes.
     const whatsappTab = openWhatsAppBridgeTab();
 
+    submittingRef.current = true;
     setIsSubmitting(true);
     const saveResult = await saveOrderBeforeWhatsApp({
       items,
       values: normalized,
       source,
     });
+
+    if (!saveResult?.ok || !saveResult.persisted || !saveResult.orderCode) {
+      try { whatsappTab?.close(); } catch { /* Tab may already be closed. */ }
+      setError(saveResult?.error || "No se pudo registrar el pedido. Intenta de nuevo.");
+      submittingRef.current = false;
+      setIsSubmitting(false);
+      return;
+    }
 
     const message = buildOrderMessage({
       items,
@@ -431,6 +431,7 @@ export default function WhatsAppCheckoutDialog({
       // Popup blocked: fall back to same-tab redirect (no extra blank tabs).
       window.location.assign(url);
     }
+    submittingRef.current = false;
     setIsSubmitting(false);
     onClose();
   };
@@ -438,6 +439,8 @@ export default function WhatsAppCheckoutDialog({
   return (
     <div className="fixed inset-0 z-[70] flex items-start justify-center bg-[color:var(--ink)]/28 px-3 py-4 backdrop-blur-[2px] sm:px-6 sm:py-8">
       <div
+        ref={dialogRef}
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-label="Confirmar pedido por WhatsApp"
@@ -464,6 +467,7 @@ export default function WhatsAppCheckoutDialog({
           <button
             type="button"
             onClick={onClose}
+            disabled={isSubmitting}
             aria-label="Cerrar confirmacion de pedido"
             className="inline-flex h-9 w-9 items-center justify-center border border-[color:var(--line)] bg-[color:var(--paper)] text-[color:var(--ink)] transition hover:bg-[color:var(--bg-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--focus-ring)]"
           >
@@ -545,6 +549,8 @@ export default function WhatsAppCheckoutDialog({
                     Nombre completo *
                   </span>
                   <input
+                    data-modal-initial-focus
+                    maxLength={140}
                     value={formValues.fullName}
                     onChange={updateField("fullName")}
                     className={fieldClassName()}
@@ -559,6 +565,8 @@ export default function WhatsAppCheckoutDialog({
                     Telefono *
                   </span>
                   <input
+                    type="tel"
+                    maxLength={40}
                     value={formValues.phone}
                     onChange={updateField("phone")}
                     className={fieldClassName()}
@@ -573,6 +581,8 @@ export default function WhatsAppCheckoutDialog({
                     Correo
                   </span>
                   <input
+                    type="email"
+                    maxLength={180}
                     value={formValues.email}
                     onChange={updateField("email")}
                     className={fieldClassName()}
@@ -676,7 +686,7 @@ export default function WhatsAppCheckoutDialog({
               </label>
 
               {error ? (
-                <div className="rounded-[12px] border border-[color:var(--brand-coral)]/45 bg-[color:var(--brand-coral)]/12 px-3 py-2 text-sm text-[color:var(--ink)]">
+                <div role="alert" className="rounded-[12px] border border-[color:var(--brand-coral)]/45 bg-[color:var(--brand-coral)]/12 px-3 py-2 text-sm text-[color:var(--ink)]">
                   {error}
                 </div>
               ) : null}

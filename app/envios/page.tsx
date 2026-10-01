@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import PolicyPage from "../../components/legal/PolicyPage";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/envios" },
   title: "Envíos y entregas",
   description:
     "Información sobre coordinación de entrega, envíos y tiempos de despacho de Galia Luna.",

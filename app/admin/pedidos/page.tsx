@@ -217,7 +217,7 @@ function OrderDetailPanel({
             <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--ink-soft)]">
               Pedido
             </p>
-            <h2 className="mt-2 [font-family:var(--font-playfair)] text-[1.9rem] leading-[0.95] tracking-[-0.02em] text-[color:var(--ink)]">
+            <h2 className="max-w-full break-all mt-2 [font-family:var(--font-playfair)] text-[1.9rem] leading-[0.95] tracking-[-0.02em] text-[color:var(--ink)]">
               {order.orderCode}
             </h2>
             <p className="mt-2 text-xs text-[color:var(--ink-soft)]">
@@ -394,7 +394,7 @@ function OrderRow({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-sm font-semibold text-[color:var(--ink)]">{order.orderCode}</p>
+            <p className="max-w-full break-all text-sm font-semibold text-[color:var(--ink)]">{order.orderCode}</p>
             <span
               className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-medium ${statusBadgeClass(order.status)}`}
             >
@@ -452,15 +452,16 @@ function OrderRow({
 export default async function AdminOrdersPage({
   searchParams,
 }: {
-  searchParams?: PageSearchParams;
+  searchParams?: Promise<PageSearchParams>;
 }) {
   const adminUser = await requireAdminUser();
 
-  const rawStatus = pickFirst(searchParams?.estado);
+  const resolvedSearchParams = await searchParams;
+  const rawStatus = pickFirst(resolvedSearchParams?.estado);
   const statusFilter = parseStatusFilter(rawStatus);
-  const q = (pickFirst(searchParams?.q) ?? "").trim();
-  const selectedOrderCode = (pickFirst(searchParams?.pedido) ?? "").trim();
-  const page = parsePage(pickFirst(searchParams?.page));
+  const q = (pickFirst(resolvedSearchParams?.q) ?? "").trim();
+  const selectedOrderCode = (pickFirst(resolvedSearchParams?.pedido) ?? "").trim();
+  const page = parsePage(pickFirst(resolvedSearchParams?.page));
 
   const [ordersPage, selectedOrder] = await Promise.all([
     listOrdersForAdminPage({

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import {
@@ -15,7 +15,7 @@ import {
   Truck,
   User,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
   CALL_OWNER_NUMBER,
@@ -97,6 +97,8 @@ export default function ProductGrid({
 }: ProductGridProps) {
   const [activeCategory, setActiveCategory] = useState<CategoryFilter>("all");
   const [hasMounted, setHasMounted] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const addItem = useCartStore((state) => state.addItem);
   const openCart = useCartStore((state) => state.openCart);
@@ -105,13 +107,16 @@ export default function ProductGrid({
   useEffect(() => setHasMounted(true), []);
 
   const visibleCartCount = hasMounted ? cartCount : 0;
-  const filtered = useMemo(
-    () =>
-      activeCategory === "all"
-        ? products
-        : products.filter((p) => p.category === activeCategory),
-    [activeCategory, products],
-  );
+  const filtered = useMemo(() => {
+    const normalize = (value: string) =>
+      value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("es");
+    const terms = normalize(searchQuery).trim().split(/\s+/).filter(Boolean);
+    return products.filter((product) => {
+      if (activeCategory !== "all" && product.category !== activeCategory) return false;
+      const searchable = normalize(`${product.name} ${product.category} ${product.description}`);
+      return terms.every((term) => searchable.includes(term));
+    });
+  }, [activeCategory, products, searchQuery]);
 
   const hero = (heroProducts && heroProducts.length > 0 ? heroProducts : products).slice(0, 3);
   const featured = featuredProduct ?? products.find((p) => p.badge) ?? products[0];
@@ -126,12 +131,16 @@ export default function ProductGrid({
   };
 
   return (
-    <div className="pb-24">
+    <div className="storefront pb-24">
+      <a href="#catalogo" className="skip-link">Saltar al catálogo</a>
       <div className="sticky top-0 z-40">
         <header className="border-b border-[color:var(--line)] bg-[color:var(--band-sky)] text-[color:var(--ink)]">
           <div className="mx-auto grid h-20 max-w-[1440px] grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 sm:h-24 sm:px-6 lg:px-8">
             <div className="flex items-center gap-3">
-              <button type="button" aria-label="Buscar" className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[color:var(--paper)]/25 bg-[color:var(--paper)]/10">
+              <button type="button" aria-label="Buscar piezas" onClick={() => {
+                searchInputRef.current?.focus({ preventScroll: true });
+                document.getElementById("catalogo")?.scrollIntoView({ block: "start" });
+              }} className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[color:var(--paper)]/25 bg-[color:var(--paper)]/10">
                 <Search className="h-4 w-4" />
               </button>
               <a href={generalWa} target="_blank" rel="noopener noreferrer" className="hidden items-center gap-2 rounded-full border border-[color:var(--paper)]/25 bg-[color:var(--paper)]/10 px-3 py-2 text-[11px] font-medium uppercase tracking-[0.16em] sm:inline-flex">
@@ -154,15 +163,15 @@ export default function ProductGrid({
               >
                 <User className="h-4 w-4" />
               </Link>
-              <button type="button" onClick={openCart} className="inline-flex items-center gap-2 rounded-full border border-[color:var(--paper)]/25 bg-[color:var(--paper)]/10 px-3 py-2 text-[11px] font-medium uppercase tracking-[0.16em]">
+              <button type="button" onClick={openCart} aria-label={`Abrir pedido (${visibleCartCount} piezas)`} aria-haspopup="dialog" className="inline-flex items-center gap-2 rounded-full border border-[color:var(--paper)]/25 bg-[color:var(--paper)]/10 px-3 py-2 text-[11px] font-medium uppercase tracking-[0.16em]">
                 <ShoppingBag className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Pedido</span>({visibleCartCount})
+                <span className="hidden sm:inline">Pedido</span><span className="min-w-[4ch] text-center tabular-nums">({visibleCartCount})</span>
               </button>
             </div>
           </div>
         </header>
 
-        <nav className="border-b border-[color:var(--line)] bg-[color:var(--band-aqua)]">
+        <nav aria-label="Navegación principal" className="border-b border-[color:var(--line)] bg-[color:var(--band-aqua)]">
           <div className="mx-auto flex h-14 max-w-[1440px] items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
             <div className="hidden items-center gap-6 text-[12px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)] md:flex">
               <a href="#inicio" className="border-b border-[color:var(--ink)] pb-1">Inicio</a>
@@ -173,7 +182,7 @@ export default function ProductGrid({
             <div className="flex w-full items-center justify-between gap-3 md:w-auto">
               <div className="inline-flex items-center gap-2 rounded-full bg-[color:var(--paper)]/55 px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.16em] text-[color:var(--ink)]">
                 <Sparkles className="h-3.5 w-3.5" />
-                Compra guiada por WhatsApp
+                <span className="sm:hidden">Compra guiada</span><span className="hidden sm:inline">Compra guiada por WhatsApp</span>
               </div>
               <a href={generalWa} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-full bg-[color:var(--brand-coral)] px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)]">
                 <MessageCircle className="h-3.5 w-3.5" />
@@ -184,7 +193,7 @@ export default function ProductGrid({
         </nav>
       </div>
 
-      <main id="inicio" className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
+      <div id="inicio" className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
         <section className="overflow-hidden border-x border-b border-[color:var(--line)] bg-[color:var(--bg-shell)]">
           <div className="grid min-h-[420px] lg:grid-cols-[0.9fr_1.2fr_0.9fr]">
             <div className="flex flex-col justify-center border-b border-[color:var(--line)] px-6 py-8 lg:border-b-0 lg:border-r">
@@ -246,8 +255,8 @@ export default function ProductGrid({
                     <a href={productWa(featured)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 rounded-full bg-[color:var(--brand-coral)] px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)]">
                       <MessageCircle className="h-3.5 w-3.5" />Consultar pieza
                     </a>
-                    <button type="button" onClick={() => onAdd(featured)} className="inline-flex items-center justify-center gap-2 rounded-full border border-[color:var(--line)] bg-[color:var(--paper)]/65 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)]">
-                      <ShoppingBag className="h-3.5 w-3.5" />Agregar al pedido
+                    <button type="button" disabled={featured.inventory === 0} onClick={() => onAdd(featured)} className="inline-flex items-center justify-center gap-2 rounded-full border border-[color:var(--line)] bg-[color:var(--paper)]/65 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)]">
+                      <ShoppingBag className="h-3.5 w-3.5" />{featured.inventory === 0 ? "Agotado" : "Agregar al pedido"}
                     </button>
                   </div>
                 </div>
@@ -260,13 +269,13 @@ export default function ProductGrid({
           </div>
         </section>
 
-        <section className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden border-y border-[color:var(--line)] bg-[color:var(--ticker-lime)]">
+        <section aria-label="Joyería artesanal, atención por WhatsApp y entrega coordinada" className="relative left-1/2 w-full -translate-x-1/2 overflow-hidden border-y border-[color:var(--line)] bg-[color:var(--ticker-lime)]">
           <div className="marquee-track flex w-max items-center">
             {Array.from({ length: 2 }).map((_, groupIdx) => (
               <div
                 key={groupIdx}
                 className="flex shrink-0 items-center gap-8 whitespace-nowrap px-4 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)] sm:gap-12 sm:px-6"
-                aria-hidden={groupIdx === 1}
+                aria-hidden="true"
               >
                 {Array.from({ length: 8 }).map((__, i) => (
                   <span key={`${groupIdx}-${i}`} className="inline-flex items-center gap-2">
@@ -278,18 +287,37 @@ export default function ProductGrid({
             ))}
           </div>
         </section>
-        <section id="catalogo" className="py-10">
+        <section id="catalogo" tabIndex={-1} className="py-10">
           <SectionHeading
             eyebrow="Catálogo"
             title="Piezas disponibles"
             description="Consulta precios, detalles y disponibilidad. Puedes comprar desde la web o escribirnos por WhatsApp para recibir ayuda."
           />
 
-          <div className="mb-5 flex flex-wrap gap-x-5 gap-y-2">
+          <div className="mb-5 grid gap-3 sm:grid-cols-[minmax(0,28rem)_1fr] sm:items-end">
+            <div>
+              <label htmlFor="buscar-piezas" className="text-sm font-medium text-[color:var(--ink)]">Buscar piezas</label>
+              <div className="mt-2 flex items-center gap-2 rounded-full border border-[color:var(--line-strong)] bg-[color:var(--paper)] px-4">
+                <Search aria-hidden="true" className="h-4 w-4 shrink-0" />
+                <input ref={searchInputRef} id="buscar-piezas" type="search" value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="Nombre, categoría o descripción"
+                  aria-controls="resultados-catalogo"
+                  className="min-w-0 flex-1 bg-transparent py-3 text-base text-[color:var(--ink)] placeholder:text-[color:var(--ink-soft)]" />
+              </div>
+            </div>
+            <p role="status" aria-live="polite" aria-atomic="true" className="min-h-6 text-sm text-[color:var(--ink-soft)] sm:pb-3">
+              {filtered.length} {filtered.length === 1 ? "pieza encontrada" : "piezas encontradas"}
+            </p>
+          </div>
+
+          <div role="group" aria-label="Filtrar por categoría" className="mb-5 flex flex-wrap gap-x-5 gap-y-2">
             <button
               type="button"
               onClick={() => setActiveCategory("all")}
-              className={`border-b pb-1 text-[11px] font-semibold uppercase tracking-[0.16em] ${
+              aria-pressed={activeCategory === "all"}
+              aria-controls="resultados-catalogo"
+              className={`min-h-11 border-b py-2 text-[11px] font-semibold uppercase tracking-[0.16em] ${
                 activeCategory === "all"
                   ? "border-[color:var(--line-strong)] text-[color:var(--ink)]"
                   : "border-transparent text-[color:var(--ink-soft)]"
@@ -302,7 +330,9 @@ export default function ProductGrid({
                 key={category}
                 type="button"
                 onClick={() => setActiveCategory(category)}
-                className={`border-b pb-1 text-[11px] font-semibold uppercase tracking-[0.16em] ${
+                aria-pressed={activeCategory === category}
+                aria-controls="resultados-catalogo"
+                className={`min-h-11 border-b py-2 text-[11px] font-semibold uppercase tracking-[0.16em] ${
                   activeCategory === category
                     ? "border-[color:var(--line-strong)] text-[color:var(--ink)]"
                     : "border-transparent text-[color:var(--ink-soft)]"
@@ -313,10 +343,11 @@ export default function ProductGrid({
             ))}
           </div>
 
+          <div id="resultados-catalogo">
           {filtered.length === 0 ? (
             <div className="border border-[color:var(--line)] bg-[color:var(--paper)] p-6">
               <p className="[font-family:var(--font-playfair)] text-2xl text-[color:var(--ink)]">
-                No hay piezas disponibles en esta categoría.
+                {searchQuery.trim() ? "No encontramos piezas con esa búsqueda." : "No hay piezas disponibles en esta categoría."}
               </p>
               <a
                 href={generalWa}
@@ -326,6 +357,8 @@ export default function ProductGrid({
               >
                 <MessageCircle className="h-3.5 w-3.5" />Consultar por WhatsApp
               </a>
+              <button type="button" onClick={() => { setSearchQuery(""); setActiveCategory("all"); }}
+                className="ml-3 mt-4 inline-flex min-h-11 items-center px-3 text-sm underline underline-offset-4">Ver todas las piezas</button>
             </div>
           ) : (
             <>
@@ -365,10 +398,10 @@ export default function ProductGrid({
                         <div className="mt-4 grid gap-2">
                           <button
                             type="button"
-                            onClick={() => onAdd(product)}
-                            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[color:var(--brand-sage)] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)]"
+                            disabled={product.inventory === 0} onClick={() => onAdd(product)}
+                            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[color:var(--brand-sage)] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#111111]"
                           >
-                            <ShoppingBag className="h-3.5 w-3.5" />Agregar al pedido
+                            <ShoppingBag className="h-3.5 w-3.5" />{product.inventory === 0 ? "Agotado" : "Agregar al pedido"}
                           </button>
                           <div className="flex gap-2">
                             <a
@@ -414,7 +447,7 @@ export default function ProductGrid({
                               quality={75}
                               placeholder="blur"
                               blurDataURL={PRODUCT_IMAGE_BLUR_DATA_URL}
-                              sizes="200px"
+                              sizes="(max-width: 767px) calc(100vw - 96px), 200px"
                               className="object-cover"
                             />
                           </div>
@@ -433,14 +466,14 @@ export default function ProductGrid({
                             <div className="text-right">
                               <p className="text-lg font-medium text-[color:var(--ink)]">{formatDOP(product.price)}</p>
                               <p className="text-xs text-[color:var(--ink-soft)]">
-                                {product.inventory ? `${product.inventory} disponibles` : "Disponible"}
+                                {product.inventory === 0 ? "Agotado" : product.inventory ? `${product.inventory} disponibles` : "Consultar disponibilidad"}
                               </p>
                             </div>
                           </div>
                           <p className="mt-4 text-sm leading-7 text-[color:var(--ink-soft)]">{product.description}</p>
                           <div className="mt-4 flex flex-wrap gap-2">
-                            <button type="button" onClick={() => onAdd(product)} className="inline-flex items-center gap-2 rounded-full bg-[color:var(--brand-sage)] px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)]">
-                              <ShoppingBag className="h-3.5 w-3.5" />Agregar al pedido
+                            <button type="button" disabled={product.inventory === 0} onClick={() => onAdd(product)} className="inline-flex items-center gap-2 rounded-full bg-[color:var(--brand-sage)] px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#111111]">
+                              <ShoppingBag className="h-3.5 w-3.5" />{product.inventory === 0 ? "Agotado" : "Agregar al pedido"}
                             </button>
                             <a href={productWa(product)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-full border border-[color:var(--brand-coral)]/35 bg-[color:var(--brand-coral)] px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)]">
                               <MessageCircle className="h-3.5 w-3.5" />Consultar
@@ -457,6 +490,7 @@ export default function ProductGrid({
               ) : null}
             </>
           )}
+          </div>
         </section>
 
         <section id="colecciones" className="py-2">
@@ -486,8 +520,8 @@ export default function ProductGrid({
                       <p className="mt-2 text-sm font-medium text-[color:var(--ink)]">{product.category} · {formatDOP(product.price)}</p>
                       <p className="mt-3 max-w-[45ch] text-sm leading-7 text-[color:var(--ink-soft)]">{product.description}</p>
                       <div className="mt-5 flex flex-wrap gap-2">
-                        <button type="button" onClick={() => onAdd(product)} className="inline-flex items-center gap-2 rounded-full bg-[color:var(--brand-sage)] px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)]">
-                          <ShoppingBag className="h-3.5 w-3.5" />Agregar al pedido
+                        <button type="button" disabled={product.inventory === 0} onClick={() => onAdd(product)} className="inline-flex items-center gap-2 rounded-full bg-[color:var(--brand-sage)] px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#111111]">
+                          <ShoppingBag className="h-3.5 w-3.5" />{product.inventory === 0 ? "Agotado" : "Agregar al pedido"}
                         </button>
                         <a href={productWa(product)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-full border border-[color:var(--brand-coral)]/35 bg-[color:var(--brand-coral)] px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)]">
                           <MessageCircle className="h-3.5 w-3.5" />Consultar
@@ -663,7 +697,7 @@ export default function ProductGrid({
             </p>
           </div>
         </footer>
-      </main>
+      </div>
     </div>
   );
 }
