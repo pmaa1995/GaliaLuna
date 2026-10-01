@@ -1,7 +1,7 @@
 ﻿import type { Metadata } from "next";
 
-import CartDrawer from "../components/store/CartDrawer";
-import ProductGrid from "../components/store/ProductGrid";
+import StoreShell from "../components/store/StoreShell";
+import HomeEditorial from "../components/store/HomeEditorial";
 import { getHomePageData } from "../lib/catalogData";
 import { SITE_URL, productSchema, serializeJsonLd } from "../lib/seo";
 
@@ -77,17 +77,16 @@ export default async function HomePage() {
   };
 
   return (
-    <main className="relative min-h-screen">
+    <StoreShell>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
       />
-      <ProductGrid
+      <HomeEditorial
         products={activeProducts}
         heroProducts={homeShowcase.heroProducts}
         featuredProduct={homeShowcase.featuredProduct}
       />
-      <CartDrawer />
-    </main>
+    </StoreShell>
   );
 }

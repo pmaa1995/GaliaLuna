@@ -1,471 +1,191 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
-import {
-  ChevronLeft,
-  ChevronRight,
-  MessageCircle,
-  Phone,
-  Plus,
-  ShoppingBag,
-  User,
-} from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { ArrowRight, ChevronLeft, ChevronRight, MessageCircle, Plus, X, ZoomIn } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-import { CALL_OWNER_NUMBER, WHATSAPP_OWNER_NUMBER } from "../../lib/contact";
-import { calculateCartCount, useCartStore } from "../../store/cartStore";
-import {
-  FALLBACK_PRODUCT_IMAGE,
-  PRODUCT_IMAGE_BLUR_DATA_URL,
-  formatDOP,
-  toCartProductSnapshot,
-  type Product,
-} from "../../types/product";
+import { WHATSAPP_OWNER_NUMBER } from "../../lib/contact";
+import { categoryHref } from "../../lib/storefront";
+import { useCartStore } from "../../store/cartStore";
+import { FALLBACK_PRODUCT_IMAGE, PRODUCT_IMAGE_BLUR_DATA_URL, formatDOP, toCartProductSnapshot, type Product } from "../../types/product";
+import ProductCard from "./ProductCard";
 import ProgressiveImage from "./ProgressiveImage";
-import WhatsAppCheckoutDialog from "./WhatsAppCheckoutDialog";
+import useModalAccessibility from "./useModalAccessibility";
 import type { WhatsAppCheckoutSubmitResult } from "./WhatsAppCheckoutDialog";
+import "./product-detail.css";
+
+const WhatsAppCheckoutDialog = dynamic(() => import("./WhatsAppCheckoutDialog"), { ssr: false });
 
 interface ProductDetailViewProps {
   product: Product;
   relatedProducts: Product[];
 }
 
-function buildProductWhatsAppUrl(product: Product) {
-  const text = [
-    "Hola Galia Luna, me interesa esta pieza:",
-    `${product.name} (${product.category})`,
-    `Precio: ${formatDOP(product.price)}`,
-    "¿Está disponible?",
-  ].join("\n");
-
-  return `https://wa.me/${WHATSAPP_OWNER_NUMBER}?text=${encodeURIComponent(text)}`;
+function productWhatsAppUrl(product: Product) {
+  const message = `Hola Galia Luna, me interesa ${product.name} (${product.category}), por ${formatDOP(product.price)}. ¿Podrían orientarme sobre esta pieza y su disponibilidad?`;
+  return `https://wa.me/${WHATSAPP_OWNER_NUMBER}?text=${encodeURIComponent(message)}`;
 }
 
-export default function ProductDetailView({
-  product,
-  relatedProducts,
-}: ProductDetailViewProps) {
-  const gallery = useMemo(
-    () =>
-      product.images.length > 0
-        ? product.images
-        : [FALLBACK_PRODUCT_IMAGE],
-    [product.images],
-  );
-
+export default function ProductDetailView({ product, relatedProducts }: ProductDetailViewProps) {
+  const gallery = useMemo(() => product.images.length ? product.images : [FALLBACK_PRODUCT_IMAGE], [product.images]);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [hasMounted, setHasMounted] = useState(false);
-  useEffect(() => setHasMounted(true), []);
+  const [isZoomOpen, setIsZoomOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
-  const [lastDirectOrder, setLastDirectOrder] =
-    useState<WhatsAppCheckoutSubmitResult | null>(null);
-  const hasMultipleImages = gallery.length > 1;
-
-  const activeImage = gallery[activeIndex] ?? FALLBACK_PRODUCT_IMAGE;
-  const productWhatsAppUrl = buildProductWhatsAppUrl(product);
-  const directCheckoutItems = useMemo(
-    () => [{ ...toCartProductSnapshot(product), quantity: 1 }],
-    [product],
-  );
-
+  const [lastDirectOrder, setLastDirectOrder] = useState<WhatsAppCheckoutSubmitResult | null>(null);
+  const zoomRef = useRef<HTMLDivElement>(null);
   const addItem = useCartStore((state) => state.addItem);
   const openCart = useCartStore((state) => state.openCart);
-  const cartCount = useCartStore((state) => calculateCartCount(state.items));
 
-  const handleAddToCart = () => {
-    addItem(toCartProductSnapshot(product), 1);
-    openCart();
-  };
+  const hasConfirmedStock = typeof product.inventory === "number" && Number.isSafeInteger(product.inventory) && product.inventory > 0;
+  const canOrder = product.inventory == null || hasConfirmedStock;
+  const activeImage = gallery[activeIndex] ?? gallery[0];
+  const hasMultipleImages = gallery.length > 1;
+  const enquiryHref = productWhatsAppUrl(product);
+  const directCheckoutItems = useMemo(() => [{ ...toCartProductSnapshot(product), quantity: 1 }], [product]);
+
+  useModalAccessibility(zoomRef, isZoomOpen, () => setIsZoomOpen(false));
 
   useEffect(() => {
     setActiveIndex(0);
+    setIsZoomOpen(false);
+    setIsCheckoutOpen(false);
     setLastDirectOrder(null);
   }, [product._id]);
 
-  const goToPrevImage = () => {
-    if (!hasMultipleImages) return;
-    setActiveIndex((current) => (current - 1 + gallery.length) % gallery.length);
-  };
-
-  const goToNextImage = () => {
-    if (!hasMultipleImages) return;
-    setActiveIndex((current) => (current + 1) % gallery.length);
+  const previousImage = () => setActiveIndex((index) => (index - 1 + gallery.length) % gallery.length);
+  const nextImage = () => setActiveIndex((index) => (index + 1) % gallery.length);
+  const addToOrder = (item: Product) => {
+    if (item.inventory != null && (!Number.isSafeInteger(item.inventory) || item.inventory <= 0)) return;
+    addItem(toCartProductSnapshot(item), 1);
+    openCart();
   };
 
   return (
-    <div className="px-4 pb-24 pt-4 sm:px-6 lg:px-10">
-      <div className="mx-auto max-w-[1440px]">
-        <header className="mb-6 flex flex-wrap items-center justify-between gap-3 border border-[color:var(--line)] bg-[color:var(--panel)]/95 px-4 py-3 backdrop-blur-xl sm:px-5">
-          <div className="flex items-center gap-3">
-            <span className="inline-block h-px w-7 bg-[color:var(--metal)]" />
-            <Link
-              href="/"
-              className="[font-family:var(--font-playfair)] text-[1.3rem] leading-none tracking-[0.08em] text-[color:var(--ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--focus-ring)]"
-            >
-              GALIA LUNA
-            </Link>
+    <div className="pdp">
+      <nav aria-label="Migas de pan" className="pdp__breadcrumb">
+        <ol>
+          <li><Link href="/">Inicio</Link></li>
+          <li><Link href="/coleccion">Colección</Link></li>
+          <li><Link href={categoryHref(product.category)}>{product.category}</Link></li>
+        </ol>
+      </nav>
+
+      <div className="pdp__layout">
+        <section className="pdp__gallery" aria-label={`Imágenes de ${product.name}`}>
+          <button type="button" className="pdp__image-stage" onClick={() => setIsZoomOpen(true)} aria-label={`Ampliar imagen de ${product.name}`}>
+            <ProgressiveImage src={activeImage.url} alt={activeImage.alt || product.name} fill priority={activeIndex === 0} quality={85}
+              placeholder="blur" blurDataURL={PRODUCT_IMAGE_BLUR_DATA_URL}
+              sizes="(max-width: 767px) calc(100vw - 40px), (max-width: 1439px) 54vw, 704px" className="pdp__image" />
+            <span className="pdp__zoom-hint" aria-hidden="true"><ZoomIn size={16} />Ampliar</span>
+          </button>
+
+          <div className="pdp__gallery-toolbar">
+            <p role="status" aria-live="polite" aria-atomic="true">Imagen {activeIndex + 1} de {gallery.length}</p>
+            {hasMultipleImages ? (
+              <div className="pdp__gallery-arrows">
+                <button type="button" onClick={previousImage} aria-label="Ver foto anterior"><ChevronLeft size={18} /></button>
+                <button type="button" onClick={nextImage} aria-label="Ver foto siguiente"><ChevronRight size={18} /></button>
+              </div>
+            ) : null}
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2 border border-[color:var(--line)] bg-[color:var(--paper)] px-3 py-2 text-[11px] font-medium uppercase tracking-[0.16em] text-[color:var(--ink)] transition hover:bg-[color:var(--bg-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--focus-ring)]"
-            >
-              <ChevronLeft className="h-3.5 w-3.5" />
-              Volver
-            </Link>
-            <Link
-              href="/mi-cuenta"
-              className="inline-flex items-center gap-2 border border-[color:var(--line)] bg-[color:var(--paper)] px-3 py-2 text-[11px] font-medium uppercase tracking-[0.16em] text-[color:var(--ink)] transition hover:bg-[color:var(--bg-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--focus-ring)]"
-            >
-              <User className="h-3.5 w-3.5" />
-              Mi cuenta
-            </Link>
-            <button
-              type="button"
-              onClick={openCart}
-              className="inline-flex items-center gap-2 border border-[color:var(--line-strong)] bg-[color:var(--paper)] px-3 py-2 text-[11px] font-medium uppercase tracking-[0.16em] text-[color:var(--ink)] transition hover:bg-[color:var(--bg-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--focus-ring)]"
-            >
-              <ShoppingBag className="h-3.5 w-3.5" />
-              <span>Pedido (<span className="inline-block min-w-[3ch] text-center tabular-nums">{hasMounted ? cartCount : 0}</span>)</span>
+          {hasMultipleImages ? (
+            <div className="pdp__thumbnails" aria-label="Vistas de la pieza">
+              {gallery.map((image, index) => (
+                <button type="button" key={`${image.url}-${index}`} onClick={() => setActiveIndex(index)}
+                  aria-label={`Ver imagen ${index + 1}`} aria-pressed={activeIndex === index} className="pdp__thumbnail">
+                  <ProgressiveImage src={image.url} alt="" fill sizes="72px" quality={60} className="pdp__image" />
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </section>
+
+        <section className="pdp__summary" aria-labelledby="product-title">
+          <p className="pdp__eyebrow">{product.category}{product.badge ? ` · ${product.badge}` : ""}</p>
+          <h1 id="product-title">{product.name}</h1>
+          <p className="pdp__price">{formatDOP(product.price)}</p>
+          <p className={`pdp__availability${hasConfirmedStock ? " pdp__availability--available" : ""}`}>
+            {product.inventory === 0 ? "Agotado" : hasConfirmedStock ? `${product.inventory} ${product.inventory === 1 ? "pieza disponible" : "piezas disponibles"}` : "Disponibilidad por confirmar"}
+          </p>
+
+          <div className="pdp__purchase">
+            <button type="button" className="pdp__button pdp__button--primary" disabled={!canOrder} onClick={() => addToOrder(product)}>
+              <Plus size={17} aria-hidden="true" />{canOrder ? "Añadir al pedido" : product.inventory === 0 ? "Agotado" : "Disponibilidad por confirmar"}
             </button>
+            {canOrder ? (
+              <button type="button" className="pdp__button pdp__button--secondary" onClick={() => setIsCheckoutOpen(true)}>
+                <MessageCircle size={17} aria-hidden="true" />Comprar esta pieza por WhatsApp
+              </button>
+            ) : (
+              <a href={enquiryHref} target="_blank" rel="noopener noreferrer" className="pdp__button pdp__button--secondary">
+                <MessageCircle size={17} aria-hidden="true" />Consultar por WhatsApp
+              </a>
+            )}
+            <p className="pdp__purchase-note">El pago y la entrega se confirman con una asesora por WhatsApp. Puedes comprar sin crear una cuenta.</p>
           </div>
-        </header>
 
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,0.92fr)] xl:grid-cols-[minmax(0,1.02fr)_24rem]">
-          <section className="grid gap-4">
-            <div className="border border-[color:var(--line)] bg-[color:var(--paper)] p-4 sm:p-5">
-              <div className="mb-4 flex items-center justify-between gap-3 border-b border-[color:var(--line)] pb-3">
-                <div>
-                  <p className="text-[10px] uppercase tracking-[0.18em] text-[color:var(--ink-soft)]">
-                    Fotos de la pieza
-                  </p>
-                  <p role="status" aria-live="polite" className="mt-1 text-xs text-[color:var(--ink-soft)]">
-                    {hasMultipleImages
-                      ? `Imagen ${activeIndex + 1} de ${gallery.length}`
-                      : "1 imagen disponible"}
-                  </p>
-                </div>
-
-                {hasMultipleImages ? (
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={goToPrevImage}
-                      aria-label="Ver foto anterior"
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[color:var(--line)] bg-[color:var(--bg-soft)] text-[color:var(--ink)] transition hover:bg-[color:var(--brand-sand)]/55 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--focus-ring)]"
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={goToNextImage}
-                      aria-label="Ver foto siguiente"
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[color:var(--line)] bg-[color:var(--bg-soft)] text-[color:var(--ink)] transition hover:bg-[color:var(--brand-sand)]/55 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--focus-ring)]"
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </button>
-                  </div>
-                ) : null}
-              </div>
-
-              <div
-                className={`grid gap-4 ${
-                  hasMultipleImages ? "lg:grid-cols-[5.25rem_minmax(0,1fr)]" : ""
-                }`}
-              >
-                {hasMultipleImages ? (
-                  <div className="order-2 grid grid-cols-4 gap-2 lg:order-1 lg:grid-cols-1 lg:content-start">
-                    {gallery.map((image, idx) => (
-                      <button
-                        key={`${image.url}-${idx}`}
-                        type="button"
-                        onClick={() => setActiveIndex(idx)}
-                        aria-label={`Ver imagen ${idx + 1}`}
-                        aria-pressed={activeIndex === idx}
-                        className={`group relative overflow-hidden rounded-[12px] border bg-[color:var(--bg-soft)] p-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--focus-ring)] ${
-                          activeIndex === idx
-                            ? "border-[color:var(--line-strong)]"
-                            : "border-[color:var(--line)]"
-                        }`}
-                      >
-                        <div className="relative aspect-square overflow-hidden rounded-[8px] bg-[color:var(--paper)]">
-                          <ProgressiveImage
-                            src={image.url}
-                            alt={image.alt || product.name}
-                            fill
-                            quality={75}
-                            placeholder="blur"
-                            blurDataURL={PRODUCT_IMAGE_BLUR_DATA_URL}
-                            sizes="(max-width: 1023px) calc((100vw - 120px) / 4), 68px"
-                            className="object-cover transition duration-200 group-hover:scale-[1.02]"
-                          />
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                ) : null}
-
-                <div className={`relative overflow-hidden border border-[color:var(--line)] bg-[color:var(--bg-soft)] ${hasMultipleImages ? "order-1" : ""}`}>
-                  <div className="mx-auto w-full max-w-[820px]">
-                    <div className="relative aspect-[5/4] sm:aspect-[4/3] lg:aspect-[5/4]">
-                      <ProgressiveImage
-                        src={activeImage.url}
-                        alt={activeImage.alt || product.name}
-                        fill
-                        priority={activeIndex === 0}
-                        quality={75}
-                        placeholder="blur"
-                        blurDataURL={PRODUCT_IMAGE_BLUR_DATA_URL}
-                        sizes="(max-width: 640px) calc(100vw - 72px), (max-width: 1024px) calc(100vw - 112px), 820px"
-                        className="object-contain p-5 sm:p-8 lg:p-10"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {hasMultipleImages ? (
-                <p className="mt-3 text-xs text-[color:var(--ink-soft)]">
-                  Selecciona otra vista para revisar ángulos y detalles de la pieza.
-                </p>
-              ) : (
-                <p className="mt-3 text-xs text-[color:var(--ink-soft)]">
-                  Si deseas ver más ángulos, escríbenos y te enviamos fotos adicionales por WhatsApp.
-                </p>
-              )}
-            </div>
-          </section>
-
-          <aside className="lg:sticky lg:top-[5.8rem] lg:self-start">
-            <div className="border border-[color:var(--line)] bg-[color:var(--paper)] p-4 sm:p-5">
-              <p className="text-[10px] uppercase tracking-[0.18em] text-[color:var(--ink-soft)]">
-                {product.category}
-                {product.badge ? ` · ${product.badge}` : ""}
-              </p>
-
-              <h1 className="mt-2 [font-family:var(--font-playfair)] text-[2.2rem] leading-[0.92] tracking-[-0.03em] text-[color:var(--ink)]">
-                {product.name}
-              </h1>
-
-              <div className="mt-4 flex items-end justify-between gap-3 border-b border-[color:var(--line)] pb-4">
-                <p className="text-xl font-medium text-[color:var(--ink)]">
-                  {formatDOP(product.price)}
-                </p>
-                <p className="text-xs text-[color:var(--ink-soft)]">
-                  {product.inventory === 0 ? "Agotado" : product.inventory ? `${product.inventory} disponibles` : "Consultar disponibilidad"}
-                </p>
-              </div>
-
-              <p className="mt-4 text-sm leading-7 text-[color:var(--ink-soft)]">
-                {product.description}
-              </p>
-
-              <div className="mt-5 grid gap-2">
-                <button
-                  type="button"
-                  disabled={product.inventory === 0}
-                  onClick={() => setIsCheckoutOpen(true)}
-                  className="inline-flex items-center justify-center gap-2 border border-[color:var(--brand-coral)]/35 bg-[color:var(--brand-coral)] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)] transition hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--brand-coral)]/45"
-                >
-                  <MessageCircle className="h-3.5 w-3.5" />
-                  {product.inventory === 0 ? "Agotado" : "Comprar por WhatsApp"}
-                </button>
-
-                <button
-                  type="button"
-                  disabled={product.inventory === 0}
-                  onClick={handleAddToCart}
-                  className="inline-flex items-center justify-center gap-2 border border-[color:var(--line-strong)] bg-[color:var(--paper)] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)] transition hover:bg-[color:var(--bg-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--focus-ring)]"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  {product.inventory === 0 ? "Agotado" : "Agregar al pedido"}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={openCart}
-                  className="inline-flex items-center justify-center gap-2 border border-[color:var(--line)] bg-[color:var(--bg-soft)] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)] transition hover:bg-[color:var(--brand-sand)]/75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--focus-ring)]"
-                >
-                  <ShoppingBag className="h-3.5 w-3.5" />
-                  Ver pedido
-                </button>
-              </div>
-
-              {lastDirectOrder?.ok ? (
-                <div className="mt-4 rounded-[14px] border border-[color:var(--brand-sage)]/35 bg-[color:var(--brand-sage)]/10 p-4">
-                  <p className="text-[10px] uppercase tracking-[0.16em] text-[color:var(--ink-soft)]">
-                    Pedido preparado
-                  </p>
-                  <p className="mt-2 text-sm leading-7 text-[color:var(--ink)] [overflow-wrap:anywhere]">
-                    Tu pedido está preparado. Confirma el envío del mensaje en WhatsApp.
-                    {lastDirectOrder.persisted && lastDirectOrder.orderCode
-                      ? ` También quedó registrado en la web con código ${lastDirectOrder.orderCode}.`
-                      : " Puedes volver a intentarlo si el mensaje no llegó."}
-                  </p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {lastDirectOrder.persisted && lastDirectOrder.orderCode && lastDirectOrder.signedIn ? (
-                      <Link
-                        href={`/mi-cuenta/pedidos/${encodeURIComponent(lastDirectOrder.orderCode)}`}
-                        className="inline-flex items-center gap-2 rounded-full border border-[color:var(--line)] bg-[color:var(--paper)] px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)] transition hover:bg-[color:var(--bg-soft)]"
-                      >
-                        Ver pedido en progreso
-                      </Link>
-                    ) : null}
-                    {lastDirectOrder.persisted && lastDirectOrder.orderCode && !lastDirectOrder.signedIn ? (
-                      <span className="block max-w-full break-all rounded-full border border-[color:var(--line)] bg-[color:var(--paper)] px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink-soft)]">
-                        Codigo: {lastDirectOrder.orderCode}
-                      </span>
-                    ) : null}
-                  </div>
-                </div>
+          {lastDirectOrder?.ok ? (
+            <div className="pdp__confirmation" role="status">
+              <p className="pdp__eyebrow">Pedido preparado</p>
+              <p>Confirma el envío del mensaje en WhatsApp para continuar con tu compra.</p>
+              {lastDirectOrder.persisted && lastDirectOrder.orderCode ? (
+                <>
+                  <p className="pdp__order-code">Registrado con código {lastDirectOrder.orderCode}.</p>
+                  {lastDirectOrder.signedIn ? <Link href={`/mi-cuenta/pedidos/${encodeURIComponent(lastDirectOrder.orderCode)}`}>Ver pedido en progreso <ArrowRight size={14} /></Link> : null}
+                </>
               ) : null}
-
-              <div className="mt-6 border-t border-[color:var(--line)] pt-4">
-                <p className="text-[10px] uppercase tracking-[0.18em] text-[color:var(--ink-soft)]">
-                  Atención personalizada
-                </p>
-                <p className="mt-2 text-sm leading-7 text-[color:var(--ink)] [overflow-wrap:anywhere]">
-                  Te ayudamos a confirmar combinaciones, disponibilidad y forma
-                  de entrega por WhatsApp.
-                </p>
-                <div className="mt-3 flex flex-wrap gap-3">
-                  <a
-                    href={productWhatsAppUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 border-b border-[color:var(--line)] pb-1 text-[11px] uppercase tracking-[0.16em] text-[color:var(--ink)] transition hover:text-[color:var(--metal)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--focus-ring)]"
-                  >
-                    <MessageCircle className="h-3.5 w-3.5" />
-                    Escribir
-                  </a>
-                  <a
-                    href={`tel:+${CALL_OWNER_NUMBER}`}
-                    className="inline-flex items-center gap-2 border-b border-transparent pb-1 text-[11px] uppercase tracking-[0.16em] text-[color:var(--ink-soft)] transition hover:border-[color:var(--line)] hover:text-[color:var(--ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--focus-ring)]"
-                  >
-                    <Phone className="h-3.5 w-3.5" />
-                    Llamar
-                  </a>
-                </div>
-              </div>
             </div>
-          </aside>
-        </div>
+          ) : null}
 
-        {relatedProducts.length > 0 ? (
-          <section className="mt-12 border-t border-[color:var(--line)] pt-8">
-            <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
+          <div className="pdp__details">
+            <details open>
+              <summary>Detalles de la pieza<Plus size={16} aria-hidden="true" /></summary>
+              <div><p>{product.description || "Escríbenos para conocer más detalles de esta pieza."}</p></div>
+            </details>
+            <details>
+              <summary>Entrega y atención<Plus size={16} aria-hidden="true" /></summary>
               <div>
-                <p className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--ink-soft)]">
-                  También disponibles
-                </p>
-                <h2 className="mt-1 [font-family:var(--font-playfair)] text-[2rem] leading-[0.95] tracking-[-0.03em] text-[color:var(--ink)]">
-                  Otras piezas que pueden gustarte
-                </h2>
+                <p>Coordinamos la entrega por WhatsApp según tu ubicación y la disponibilidad de la pieza. Confirmaremos contigo el método y el tiempo estimado antes de despachar.</p>
+                <Link href="/envios">Consultar envíos y entregas <ArrowRight size={14} /></Link>
               </div>
-              <Link
-                href="/"
-                className="inline-flex items-center gap-2 border-b border-[color:var(--line)] pb-1 text-[11px] uppercase tracking-[0.16em] text-[color:var(--ink)] transition hover:text-[color:var(--metal)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--focus-ring)]"
-              >
-                Ver catálogo completo
-                <ChevronRight className="h-3.5 w-3.5" />
-              </Link>
-            </div>
-
-            <div className="space-y-4">
-              {relatedProducts.slice(0, 4).map((item) => {
-                const image = item.images[0] ?? FALLBACK_PRODUCT_IMAGE;
-                const itemWhatsappUrl = buildProductWhatsAppUrl(item);
-
-                return (
-                  <article
-                    key={item._id}
-                    className="grid gap-4 border border-[color:var(--line)] bg-[color:var(--paper)] p-4 sm:grid-cols-[8rem_minmax(0,1fr)] sm:p-5"
-                  >
-                    <Link
-                      href={`/product/${item.slug.current}`}
-                      className="relative block overflow-hidden border border-[color:var(--line)] bg-[color:var(--bg-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--focus-ring)]"
-                    >
-                      <div className="relative aspect-[4/5]">
-                        <ProgressiveImage
-                          src={image.url}
-                          alt={image.alt || item.name}
-                          fill
-                          quality={75}
-                          placeholder="blur"
-                          blurDataURL={PRODUCT_IMAGE_BLUR_DATA_URL}
-                          sizes="(max-width: 639px) calc(100vw - 64px), 128px"
-                          className="object-cover"
-                        />
-                      </div>
-                    </Link>
-
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[color:var(--line)] pb-2">
-                        <div>
-                          <p className="text-[10px] uppercase tracking-[0.18em] text-[color:var(--ink-soft)]">
-                            {item.category}
-                          </p>
-                          <h3 className="mt-1 [font-family:var(--font-playfair)] text-[1.4rem] leading-[0.95] tracking-[-0.02em] text-[color:var(--ink)]">
-                            {item.name}
-                          </h3>
-                        </div>
-                        <p className="text-sm font-medium text-[color:var(--ink)]">
-                          {formatDOP(item.price)}
-                        </p>
-                      </div>
-
-                      <p className="mt-3 text-sm leading-7 text-[color:var(--ink-soft)]">
-                        {item.description}
-                      </p>
-
-                      <div className="mt-4 flex flex-wrap gap-2">
-                        <Link
-                          href={`/product/${item.slug.current}`}
-                          className="inline-flex items-center gap-2 border border-[color:var(--line-strong)] bg-[color:var(--paper)] px-3 py-2 text-[11px] font-medium uppercase tracking-[0.16em] text-[color:var(--ink)] transition hover:bg-[color:var(--bg-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--focus-ring)]"
-                        >
-                          Ver detalle
-                          <ChevronRight className="h-3.5 w-3.5" />
-                        </Link>
-                        <a
-                          href={itemWhatsappUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 border border-[color:var(--brand-coral)]/35 bg-[color:var(--brand-coral)] px-3 py-2 text-[11px] font-medium uppercase tracking-[0.16em] text-[color:var(--ink)] transition hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--brand-coral)]/45"
-                        >
-                          <MessageCircle className="h-3.5 w-3.5" />
-                          Consultar
-                        </a>
-                        <button
-                          type="button"
-                          disabled={item.inventory === 0}
-                          onClick={() => {
-                            addItem(toCartProductSnapshot(item), 1);
-                            openCart();
-                          }}
-                          className="inline-flex items-center gap-2 border border-[color:var(--line)] bg-[color:var(--bg-soft)] px-3 py-2 text-[11px] font-medium uppercase tracking-[0.16em] text-[color:var(--ink)] transition hover:bg-[color:var(--brand-sand)]/75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--focus-ring)]"
-                        >
-                          <Plus className="h-3.5 w-3.5" />
-                          {item.inventory === 0 ? "Agotado" : "Agregar"}
-                        </button>
-                      </div>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-          </section>
-        ) : null}
+            </details>
+            <details>
+              <summary>Cambios y devoluciones<Plus size={16} aria-hidden="true" /></summary>
+              <div>
+                <p>Los cambios y devoluciones se evalúan según el estado de la pieza y las condiciones de compra. Consulta la política antes de confirmar tu pedido.</p>
+                <Link href="/cambios-y-devoluciones">Ver la política <ArrowRight size={14} /></Link>
+              </div>
+            </details>
+          </div>
+          <a className="pdp__assistance" href={enquiryHref} target="_blank" rel="noopener noreferrer"><MessageCircle size={16} />¿Tienes alguna duda? Habla con una asesora.</a>
+        </section>
       </div>
 
-      <WhatsAppCheckoutDialog
-        open={isCheckoutOpen}
-        onClose={() => setIsCheckoutOpen(false)}
-        items={directCheckoutItems}
-        source="product"
-        onSubmitted={(result) => setLastDirectOrder(result)}
-      />
+      {relatedProducts.length > 0 ? (
+        <section className="pdp__related" aria-labelledby="related-title">
+          <div className="pdp__related-heading"><h2 id="related-title">Completa tu selección</h2><Link href="/coleccion">Ver la colección <ArrowRight size={16} /></Link></div>
+          <div className="pdp__related-grid">{relatedProducts.slice(0, 4).map((item, index) => <ProductCard key={item._id} product={item} index={index} onAddToCart={addToOrder} />)}</div>
+        </section>
+      ) : null}
+
+      {isZoomOpen ? (
+        <div className="pdp-zoom" onClick={(event) => { if (event.target === event.currentTarget) setIsZoomOpen(false); }}>
+          <div ref={zoomRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="pdp-image-title" className="pdp-zoom__dialog"
+            onKeyDown={(event) => { if (event.key === "ArrowRight" || event.key === "ArrowLeft") { event.preventDefault(); if (event.key === "ArrowRight") nextImage(); else previousImage(); } }}>
+            <header><h2 id="pdp-image-title">{product.name}</h2><button type="button" aria-label="Cerrar imagen ampliada" onClick={() => setIsZoomOpen(false)}><X size={22} /></button></header>
+            <div className="pdp-zoom__image"><ProgressiveImage src={activeImage.url} alt={activeImage.alt || product.name} fill sizes="90vw" quality={90} className="pdp__image" /></div>
+            <div className="pdp-zoom__controls">
+              <button type="button" disabled={!hasMultipleImages} aria-label="Ver foto anterior" onClick={previousImage}><ChevronLeft size={20} /></button>
+              <p role="status" aria-live="polite">Imagen {activeIndex + 1} de {gallery.length}</p>
+              <button type="button" disabled={!hasMultipleImages} aria-label="Ver foto siguiente" onClick={nextImage}><ChevronRight size={20} /></button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {isCheckoutOpen ? <WhatsAppCheckoutDialog open onClose={() => setIsCheckoutOpen(false)} items={directCheckoutItems} source="product" onSubmitted={setLastDirectOrder} /> : null}
     </div>
   );
 }
-

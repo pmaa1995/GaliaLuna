@@ -1,7 +1,7 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-import CartDrawer from "../../../components/store/CartDrawer";
+import StoreShell from "../../../components/store/StoreShell";
 import ProductDetailView from "../../../components/store/ProductDetailView";
 import { getActiveProductSlugs, getProductPageData } from "../../../lib/catalogData";
 import { productUrl, productSchema, serializeJsonLd } from "../../../lib/seo";
@@ -56,14 +56,14 @@ export default async function ProductPage({ params }: ProductPageProps) {
   }
 
   return (
-    <main className="relative min-h-screen">
+    <StoreShell>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd({ "@context": "https://schema.org", ...productSchema(data.product) }) }} />
       <ProductDetailView
         product={data.product}
         relatedProducts={data.relatedProducts}
       />
-      <CartDrawer />
-    </main>
+
+    </StoreShell>
   );
 }
 

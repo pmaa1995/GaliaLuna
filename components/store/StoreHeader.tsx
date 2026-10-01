@@ -1,70 +1,55 @@
 "use client";
 
 import Link from "next/link";
-import { memo } from "react";
+import { usePathname } from "next/navigation";
+import { Search, ShoppingBag, User, X, ArrowRight } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { collectionCategories } from "../../lib/storefront";
+import { calculateCartCount, useCartStore } from "../../store/cartStore";
+import useModalAccessibility from "./useModalAccessibility";
 
-import type { CategoryFilter } from "../../types/product";
-import CategorySegment from "./CategorySegment";
-
-interface StoreHeaderProps {
-  cartCount: number;
-  activeCategory: CategoryFilter;
-  onCategoryChange: (category: CategoryFilter) => void;
-  onCartClick: () => void;
-}
-
-function StoreHeaderComponent({
-  cartCount,
-  activeCategory,
-  onCategoryChange,
-  onCartClick,
-}: StoreHeaderProps) {
+export default function StoreHeader() {
+  const pathname = usePathname();
+  const count = useCartStore((state) => calculateCartCount(state.items));
+  const openCart = useCartStore((state) => state.openCart);
+  const [mounted, setMounted] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+  useEffect(() => setMounted(true), []);
+  useEffect(() => setSearchOpen(false), [pathname]);
+  useModalAccessibility(searchRef, searchOpen, () => setSearchOpen(false));
   return (
-    <header className="sticky top-0 z-40 border-b border-[color:var(--border-warm)]/70 bg-[color:var(--bg-shell)]/58 backdrop-blur-xl">
-      <div className="mx-auto max-w-[1440px] px-4 py-4 sm:px-6 lg:px-10">
-        <div className="grid gap-3">
-          <div className="flex items-center justify-between gap-4">
-            <Link
-              href="/"
-              className="inline-flex min-w-0 flex-col focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--bg-shell)]"
-              aria-label="Ir al inicio de Galia Luna"
-            >
-              <span className="text-[10px] uppercase tracking-[0.26em] text-[color:var(--ink-soft)]">
-                Maison de joieria
-              </span>
-              <span className="mt-0.5 [font-family:var(--font-playfair)] text-[2rem] leading-none tracking-[-0.02em] text-[color:var(--ink)]">
-                Galia Luna
-              </span>
-            </Link>
-
-            <div className="flex items-center gap-4">
-              <span className="hidden text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-soft)] sm:inline">
-                Coleccion 2026
-              </span>
-              <button
-                type="button"
-                onClick={onCartClick}
-                aria-label={`Abrir carrito (${cartCount} artículos)`}
-                className="inline-flex items-center gap-2 [font-family:var(--font-inter)] text-sm text-[color:var(--ink)] transition duration-200 ease-editorial hover:opacity-75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--focus-ring)]"
-              >
-                <span className="tracking-[0.01em]">Carrito</span>
-                <span className="inline-flex min-w-5 items-center justify-center rounded-full border border-[color:var(--border-warm)] px-1.5 py-0.5 text-[10px] font-medium text-[color:var(--ink)]">
-                  {cartCount}
-                </span>
-              </button>
-            </div>
+    <>
+      <a href="#contenido" className="skip-link">Saltar al contenido</a>
+      <div className="shop-announcement">Piezas con carácter. Atención personal.</div>
+      <header className="shop-header">
+        <div className="shop-header-main">
+          <button className="shop-icon-button shop-search-trigger" aria-label="Buscar piezas" aria-haspopup="dialog" onClick={() => setSearchOpen(true)}>
+            <Search size={19} aria-hidden="true" /><span>Buscar</span>
+          </button>
+          <Link href="/" className="shop-wordmark" aria-label="Galia Luna, inicio">Galia Luna<span>JOYERÍA & ACCESORIOS</span></Link>
+          <div className="shop-header-actions">
+            <Link href="/mi-cuenta" className="shop-icon-button shop-account" aria-label="Mi cuenta"><User size={19} aria-hidden="true" /></Link>
+            <button className="shop-icon-button shop-bag" onClick={openCart} aria-label={`Abrir pedido (${mounted ? count : 0} piezas)`} aria-haspopup="dialog"><ShoppingBag size={19} aria-hidden="true" /><span className="shop-count">{mounted ? count : 0}</span></button>
           </div>
-
-          <CategorySegment
-            activeCategory={activeCategory}
-            onChange={onCategoryChange}
-          />
         </div>
-      </div>
-    </header>
+        <nav aria-label="Colecciones" className="shop-category-nav">
+          <Link href="/coleccion" aria-current={pathname === "/coleccion" ? "page" : undefined}>Ver todo</Link>
+          {collectionCategories.map(({ slug, label }) => <Link key={slug} href={`/coleccion/${slug}`} aria-current={pathname === `/coleccion/${slug}` ? "page" : undefined}>{label}</Link>)}
+        </nav>
+      </header>
+      {searchOpen && <div className="shop-search-overlay" onClick={(event) => { if (event.target === event.currentTarget) setSearchOpen(false); }}>
+        <div ref={searchRef} role="dialog" aria-modal="true" aria-labelledby="shop-search-title" tabIndex={-1} className="shop-search-dialog">
+          <div className="shop-dialog-heading"><h2 id="shop-search-title">Encuentra tu próxima pieza</h2><button className="shop-icon-button" onClick={() => setSearchOpen(false)} aria-label="Cerrar búsqueda"><X size={22} /></button></div>
+          <form action="/coleccion" className="shop-search-form">
+            <label className="sr-only" htmlFor="global-search">Buscar piezas</label>
+            <input id="global-search" type="search" name="q" maxLength={120} placeholder="Prueba con anillos, caracol…" data-modal-initial-focus autoComplete="off" />
+            <button type="submit" aria-label="Buscar en la colección"><ArrowRight size={24} /></button>
+          </form>
+          <p className="shop-eyebrow">Explora por categoría</p>
+          <div className="shop-search-categories">{collectionCategories.map(({ slug, label }) => <Link key={slug} href={`/coleccion/${slug}`} onClick={() => setSearchOpen(false)}>{label}<ArrowRight size={16} /></Link>)}</div>
+        </div>
+      </div>}
+    </>
   );
 }
-
-const StoreHeader = memo(StoreHeaderComponent);
-
-export default StoreHeader;

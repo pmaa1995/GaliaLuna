@@ -63,3 +63,16 @@ Los tests simulan Clerk/Sanity y prueban transacciones con SQLite en memoria. No
 `tests/storefront.browser.cjs` comprueba búsqueda, filtros, navegación, carrito, accesibilidad y checkout simulado. Requiere Playwright y Chrome/Chromium disponibles en el entorno. Ejecuta primero una compilación y un servidor local (`npm run build` y `npm run start`). Configura `STOREFRONT_URL` con la URL local y ejecuta `node tests/storefront.browser.cjs`.
 
 Si Playwright no está instalado en el proyecto, `PLAYWRIGHT_MODULE` puede apuntar a una instalación externa. `CHROME_PATH` permite elegir el ejecutable del navegador y `STOREFRONT_SCREENSHOTS` la carpeta de capturas. El script rechaza dominios no locales, intercepta los pedidos y no envía mensajes reales. No forma parte de `npm test`, porque requiere el navegador y el servidor en ejecución.
+
+
+## Rediseño comercial y WSL
+
+La portada editorial se sirve desde HomeEditorial (componente servidor). /coleccion agrupa el catálogo y /coleccion/[categoria] ofrece las categorías. CatalogBrowser mantiene búsqueda, precio máximo, stock confirmado, orden y paginación en la URL; recupera filtros y posición al volver desde una pieza. Precio y stock también funcionan mediante formulario GET sin JavaScript. La colección se renderiza en servidor bajo demanda y reutiliza la lectura cacheada del catálogo. Las combinaciones de filtros tienen canonical a su categoría y noindex.
+
+StoreShell comparte cabecera y pie entre portada, colección y producto. El carrito y el formulario de compra se cargan cuando se necesitan. La portada mantiene salvia, coral, arena y tipografía editorial; utiliza fotografías del catálogo y no promete existencias, materiales ni condiciones de entrega que no estén verificados. Las categorías vacías no ocupan un espacio destacado en la portada.
+
+Para compilar con tu Ubuntu WSL2, sigue [docs/WSL_BUILD.md](docs/WSL_BUILD.md). El script scripts/wsl-snapshot.sh prepara una copia aislada en ext4 con Node 22.20.0 Linux; conserva el Node global y separa los node_modules de Windows. WSL resuelve el entorno de compilación Linux. No sustituye las mediciones de visitantes después de publicar.
+
+Pruebas de navegador adicionales: node tests/product-detail.browser.cjs valida galería, zoom, accesibilidad y checkout directo simulado. Ambas suites aceptan STOREFRONT_URL local, PLAYWRIGHT_MODULE, CHROME_PATH, STOREFRONT_SCREENSHOTS y STOREFRONT_REPORT. No apuntarlas a producción. Las sesiones reales de Clerk y un pedido real siguen pendientes de una validación controlada posterior al despliegue.
+
+Las fotografías usan un loader de next/image hacia el CDN de Sanity: se solicita el ancho apropiado al dispositivo, calidad explícita y formato automático directamente al proveedor. Así se conserva srcset/lazy-loading sin retransformar cada foto en el Worker. Las imágenes locales de fallback siguen disponibles. Fuentes: https://nextjs.org/docs/app/api-reference/config/next-config-js/images y https://www.sanity.io/docs/apis-and-sdks/image-urls.

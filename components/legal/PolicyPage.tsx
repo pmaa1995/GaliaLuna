@@ -42,7 +42,7 @@ export default function PolicyPage({
           </Link>
         </div>
         <Link
-          href="/"
+          href="/coleccion"
           className="inline-flex items-center rounded-full border border-[color:var(--line)] bg-[color:var(--bg-soft)] px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)]"
         >
           Volver al catálogo

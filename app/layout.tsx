@@ -4,6 +4,7 @@ import { Cormorant_Garamond, Inter } from "next/font/google";
 
 import { SITE_URL } from "../lib/seo";
 import "./globals.css";
+import "./storefront.css";
 
 const playfair = Cormorant_Garamond({
   subsets: ["latin"],

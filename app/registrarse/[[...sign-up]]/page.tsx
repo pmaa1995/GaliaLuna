@@ -93,7 +93,7 @@ export default function SignUpPage() {
                   Ya tengo cuenta
                 </Link>
                 <Link
-                  href="/"
+                  href="/coleccion"
                   className="inline-flex items-center rounded-full bg-[color:var(--brand-sage)] px-3.5 py-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)]"
                 >
                   Ver catalogo

@@ -114,7 +114,7 @@ const CartLineItem = memo(function CartLineItem({
   );
 });
 
-export default function CartDrawer() {
+export default function CartDrawer({ floating = true }: { floating?: boolean }) {
   const prefersReducedMotion = useReducedMotion();
   const [hasMounted, setHasMounted] = useState(false);
   const dialogRef = useRef<HTMLElement>(null);
@@ -149,7 +149,7 @@ export default function CartDrawer() {
 
   return (
     <>
-      <button
+      {floating ? <button
         type="button"
         onClick={openCart}
         aria-label={`Abrir pedido (${totalItems})`}
@@ -162,7 +162,7 @@ export default function CartDrawer() {
       >
         <ShoppingBag className="h-3.5 w-3.5" />
         <span>Pedido (<span className="inline-block min-w-[3ch] text-center tabular-nums">{totalItems}</span>)</span>
-      </button>
+      </button> : null}
 
       <AnimatePresence initial={false}>
         {safeIsOpen ? (
@@ -254,6 +254,7 @@ export default function CartDrawer() {
                   <p className="mt-2 text-sm leading-7 text-[color:var(--ink-soft)]">
                     Agrega piezas desde el catálogo y confírmalo por WhatsApp cuando quieras.
                   </p>
+                  <Link href="/coleccion" onClick={closeCart} className="shop-button shop-button-primary mt-5">Explorar la colección</Link>
                 </div>
               ) : (
                 <ul className="space-y-3">

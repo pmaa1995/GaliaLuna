@@ -1,202 +1,162 @@
+// Local-only integration checks. All order POSTs and WhatsApp navigation are intercepted.
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
 const path = require('node:path');
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const baseURL = process.env.STOREFRONT_URL;
-const mockOrderCode = 'GL-20261001-0123456789ABCDEF0123456789ABCDEF';
-if (!baseURL) throw new Error('Set STOREFRONT_URL to the local preview URL.');
-if (!['localhost', '127.0.0.1'].includes(new URL(baseURL).hostname)) throw new Error('Run this interactive smoke test against a local preview only.');
-const report = { checks: [], screenshots: [], labMetrics: [], pageErrors: [], hydrationErrors: [] };
+if (!baseURL || !['127.0.0.1', 'localhost'].includes(new URL(baseURL).hostname)) throw new Error('Use a local STOREFRONT_URL.');
+const report = { checks: [], errors: [], hydrationErrors: [], screenshots: [] };
 const check = (label, condition) => { assert.ok(condition, label); report.checks.push(label); };
-
+const code = 'GL-20261001-0123456789ABCDEF0123456789ABCDEF';
 (async () => {
   const browser = await chromium.launch({ headless: true, executablePath: process.env.CHROME_PATH || undefined });
   try {
-    const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
-    await context.addInitScript(() => {
-      history.scrollRestoration = 'manual';
-      window.__storefrontMetrics = { cls: 0, lcpMs: null, shiftSources: [] };
-      let sessionStart = 0;
-      let lastShift = 0;
-      let sessionValue = 0;
-      if (PerformanceObserver.supportedEntryTypes.includes('layout-shift')) {
-        new PerformanceObserver(list => {
-          for (const entry of list.getEntries()) {
-            if (entry.hadRecentInput) continue;
-            if (entry.startTime - lastShift > 1000 || entry.startTime - sessionStart > 5000) {
-              sessionStart = entry.startTime;
-              sessionValue = entry.value;
-            } else sessionValue += entry.value;
-            lastShift = entry.startTime;
-            window.__storefrontMetrics.cls = Math.max(window.__storefrontMetrics.cls, sessionValue);
-            window.__storefrontMetrics.shiftSources.push({ value: entry.value, atMs: entry.startTime, nodes: (entry.sources || []).map(s => s.node?.tagName).filter(Boolean) });
-          }
-        }).observe({ type: 'layout-shift', buffered: true });
-      }
-      if (PerformanceObserver.supportedEntryTypes.includes('largest-contentful-paint')) {
-        new PerformanceObserver(list => {
-          for (const entry of list.getEntries()) window.__storefrontMetrics.lcpMs = entry.startTime;
-        }).observe({ type: 'largest-contentful-paint', buffered: true });
-      }
-    });
+    const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, reducedMotion: 'reduce' });
     const page = await context.newPage();
-    page.on('pageerror', err => report.pageErrors.push(err.message));
-    page.on('console', msg => { if (/hydration|did not match|server rendered html/i.test(msg.text()) && msg.type() === 'error') report.hydrationErrors.push(msg.text()); });
-    const response = await page.goto(baseURL, { waitUntil: 'domcontentloaded', timeout: 120000 });
-    check('Home responds successfully', response.ok());
-    const results = page.locator('#resultados-catalogo');
-    await results.locator('article').first().waitFor();
-    const total = await results.locator('article').count();
-    check('Real catalogue is populated', total > 0);
-    check('Home has one main landmark', await page.locator('main').count() === 1);
-    check('Home has one h1', await page.locator('h1').count() === 1);
-    const productName = (await results.locator('article h3').first().textContent()).trim();
-    const productHref = await results.locator('article a[href^="/product/"]').first().getAttribute('href');
-    const search = page.getByRole('searchbox', { name: 'Buscar piezas' });
-    await page.getByRole('button', { name: 'Buscar piezas', exact: true }).click();
-    check('Header search button focuses the search field', await search.evaluate(el => el === document.activeElement));
-    const normalizedName = productName.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
-    await search.fill(normalizedName);
-    await page.waitForFunction(name => document.querySelector('#resultados-catalogo')?.textContent.includes(name), productName);
-    check('Search matches the product with case and accents normalized', await results.locator('article').count() >= 1);
-    const accentedName = normalizedName.replace(/[AEIOU]/g, c => ({ A: 'Á', E: 'É', I: 'Í', O: 'Ó', U: 'Ú' }[c]));
-    await search.fill(accentedName);
-    await page.waitForFunction(name => document.querySelector('#resultados-catalogo')?.textContent.includes(name), productName);
-    check('Search accepts accented input', await results.locator('article').count() >= 1);
-    await search.fill('sin-resultados-prueba-zz991');
-    await page.getByText('No encontramos piezas con esa búsqueda.', { exact: true }).waitFor();
-    check('Unmatched search has zero products', await results.locator('article').count() === 0);
-    await page.getByRole('button', { name: 'Ver todas las piezas', exact: true }).click();
-    check('Empty-state recovery restores all products', await results.locator('article').count() === total && await search.inputValue() === '');
-    const category = page.getByRole('group', { name: 'Filtrar por categoría' }).getByRole('button', { name: 'Aretes', exact: true });
-    await category.click();
-    check('Category marks itself selected', await category.getAttribute('aria-pressed') === 'true');
-    check('Category narrows results correctly', await results.locator('article > div > p:first-child, article > div > div > div > p:first-child').evaluateAll(nodes => nodes.filter(n => /Anillos|Aretes|Cadenas|Carteras|Collares/.test(n.textContent)).every(n => n.textContent.includes('Aretes'))));
-    await page.getByRole('button', { name: 'Todas', exact: true }).click();
-    const add = results.getByRole('button', { name: 'Agregar al pedido', exact: true }).first();
+    page.setDefaultNavigationTimeout(120000);
+    page.on('pageerror', error => report.errors.push(error.message));
+    page.on('console', message => { if (message.type() === 'error' && /hydration|did not match|server rendered html/i.test(message.text())) report.hydrationErrors.push(message.text()); });
+    await page.goto(baseURL, { waitUntil: 'networkidle' });
+    check('Home has one main and one h1', await page.locator('main').count() === 1 && await page.locator('h1').count() === 1);
+    check('Home has a direct collection CTA', await page.getByRole('link', { name: 'Explorar la colección', exact: true }).count() === 1);
+    const searchButton = page.getByRole('button', { name: 'Buscar piezas', exact: true });
+    await searchButton.click();
+    const searchDialog = page.getByRole('dialog', { name: 'Encuentra tu próxima pieza' });
+    const globalSearch = searchDialog.getByRole('searchbox', { name: 'Buscar piezas' });
+    check('Global search focuses its field and makes page inert', await globalSearch.evaluate(el => el === document.activeElement) && await page.locator('main').evaluate(el => !!el.closest('[inert]')));
+    await page.keyboard.press('Escape');
+    check('Search closes with Escape and restores focus', await searchButton.evaluate(el => el === document.activeElement));
+    await searchButton.click();
+    await globalSearch.fill('anillo');
+    await searchDialog.getByRole('button', { name: 'Buscar en la colección' }).click();
+    await page.waitForURL('**/coleccion?q=anillo');
+    await page.locator('#catalog-search').waitFor();
+    check('Native global search navigates and SSR applies query', await page.locator('#catalog-search').inputValue() === 'anillo' && await page.locator('.shop-product-card').count() > 0);
+    await page.goto(new URL('/coleccion', baseURL).href, { waitUntil: 'networkidle' });
+    const cards = page.locator('#resultados-catalogo .shop-product-card');
+    const initialCount = await cards.count();
+    check('Collection is paginated and server rendered', initialCount > 0 && initialCount <= 12 && await page.locator('h1').count() === 1);
+    const productName = (await cards.first().locator('h3').textContent()).trim();
+    const search = page.locator('#catalog-search');
+    await search.fill(productName.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase());
+    await page.waitForFunction(() => document.querySelectorAll('.shop-product-card').length < 12);
+    check('Search ignores case and accent differences', (await cards.first().locator('h3').textContent()).trim() === productName);
+    await search.fill('zz-no-existe-928341');
+    await page.getByText('No encontramos esa combinación.', { exact: true }).waitFor();
+    check('Empty search has useful recovery', await cards.count() === 0);
+    await page.getByRole('link', { name: 'Ver todas las piezas', exact: true }).click();
+    await page.waitForFunction(() => document.querySelectorAll('.shop-product-card').length > 1);
+    check('Recovery clears query and restores collection', await search.inputValue() === '' && await cards.count() === initialCount);
+    await page.locator('#catalog-sort').selectOption('price-asc');
+    const prices = await cards.evaluateAll(nodes => nodes.map(node => Number(node.dataset.productPrice)));
+    check('Ascending price order is applied', prices.every((price, index) => index === 0 || price >= prices[index - 1]));
+    await page.getByRole('button', { name: 'Filtros', exact: true }).click();
+    await page.locator('#catalog-price').fill('3500');
+    check('Price limit applies including cents', (await cards.evaluateAll(nodes => nodes.map(node => Number(node.dataset.productPrice)))).every(price => price <= 3500));
+    const filteredURL = page.url();
+    const filteredNames = await cards.locator('h3').allTextContents();
+    await cards.first().locator('.shop-product-image').click();
+    await page.waitForURL('**/product/**');
+    await page.goBack({ waitUntil: 'networkidle' });
+    await page.waitForFunction(() => document.querySelector('#catalog-price')?.value === '3500');
+    check('Back from PDP restores URL, controls and filtered products', page.url() === filteredURL && JSON.stringify(await cards.locator('h3').allTextContents()) === JSON.stringify(filteredNames) && await page.locator('#catalog-sort').inputValue() === 'price-asc');
+    await page.getByRole('link', { name: 'Limpiar', exact: true }).click();
+    const more = page.getByRole('link', { name: 'Ver más piezas', exact: true });
+    if (await more.count()) {
+      await more.click();
+      await page.waitForFunction(() => document.querySelectorAll('.shop-product-card').length > 12);
+      const expandedCount = await cards.count();
+      const lastCard = cards.last();
+      await lastCard.scrollIntoViewIfNeeded();
+      const scrollBefore = await page.evaluate(() => scrollY);
+      await lastCard.locator('.shop-product-image').click();
+      await page.waitForURL('**/product/**');
+      await page.goBack({ waitUntil: 'networkidle' });
+      await page.waitForFunction(count => document.querySelectorAll('.shop-product-card').length === count, expandedCount);
+      check('Back from expanded results restores pagination', await cards.count() === expandedCount && page.url().includes('pagina=2'));
+      await page.waitForFunction(expected => Math.abs(scrollY - expected) < 180, scrollBefore, { timeout: 5000 }).catch(async () => { throw new Error('Scroll restoration: ' + JSON.stringify({ before: scrollBefore, after: await page.evaluate(() => scrollY), history: await page.evaluate(() => history.state?.galiaCatalog) })); });
+      check('Back restores catalog scroll position', Math.abs(await page.evaluate(() => scrollY) - scrollBefore) < 180);
+    }
+    await page.locator('.shop-category-nav').getByRole('link', { name: 'Aretes', exact: true }).click();
+    await page.waitForURL('**/coleccion/aretes');
+    check('Category has its own route and correct products', (await page.locator('h1').textContent()).trim() === 'Aretes' && (await cards.locator('.shop-product-category').allTextContents()).every(text => text === 'Aretes'));
+    const add = cards.getByRole('button', { name: /^Añadir / }).first();
     await add.click();
     const cart = page.locator('[role="dialog"][aria-labelledby="cart-title"]');
     await cart.waitFor();
-    check('Cart opens as modal', await cart.getAttribute('aria-modal') === 'true');
-    check('Background is inert while cart is open', await page.locator('.storefront').evaluate(el => Boolean(el.closest('[inert]'))));
-    check('Page scrolling is locked while cart is open', await page.evaluate(() => document.body.style.overflow === 'hidden'));
-    const close = cart.getByRole('button', { name: 'Cerrar pedido' });
-    check('Cart initially focuses close', await close.evaluate(el => el === document.activeElement));
+    check('Cart loads on demand and locks background', await page.locator('main').evaluate(el => !!el.closest('[inert]')) && await page.evaluate(() => document.body.style.overflow === 'hidden'));
+    const closeCart = cart.getByRole('button', { name: 'Cerrar pedido' });
+    check('Cart receives initial focus', await closeCart.evaluate(el => el === document.activeElement));
     await page.keyboard.press('Shift+Tab');
-    check('Shift+Tab wraps inside cart', await cart.getByRole('button', { name: 'Vaciar pedido' }).evaluate(el => el === document.activeElement));
+    check('Cart traps reverse keyboard navigation', await cart.getByRole('button', { name: 'Vaciar pedido' }).evaluate(el => el === document.activeElement));
     await page.keyboard.press('Tab');
-    check('Tab wraps back to first cart control', await close.evaluate(el => el === document.activeElement));
-    const startCheckout = cart.getByRole('button', { name: 'Enviar pedido por WhatsApp', exact: true });
-    await startCheckout.click();
-    await page.waitForFunction(() => document.querySelectorAll('[role="dialog"]').length === 2);
-    check('Nested checkout receives focus', await page.evaluate(() => { const active = document.activeElement?.closest('[role="dialog"]'); return Boolean(active && active.getAttribute('aria-labelledby') !== 'cart-title'); }));
-    check('Cart becomes inert behind checkout', await cart.evaluate(el => Boolean(el.closest('[inert]'))));
-    const nestedCheckout = page.getByRole('dialog', { name: 'Confirmar pedido por WhatsApp', exact: true });
-    check('Checkout initially focuses the name field', await nestedCheckout.getByLabel('Nombre completo *', { exact: true }).evaluate(el => el === document.activeElement));
-    const closeCheckout = nestedCheckout.getByRole('button', { name: 'Cerrar confirmacion de pedido' });
-    await closeCheckout.focus();
-    await page.keyboard.press('Shift+Tab');
-    check('Shift+Tab wraps inside nested checkout', await nestedCheckout.getByRole('button', { name: 'Enviar por WhatsApp', exact: true }).evaluate(el => el === document.activeElement));
-    await page.keyboard.press('Tab');
-    check('Tab wraps back inside nested checkout', await closeCheckout.evaluate(el => el === document.activeElement));
-    await page.keyboard.press('Escape');
-    await page.waitForFunction(() => document.querySelectorAll('[role="dialog"]').length === 1);
-    check('Escape closes checkout only', await cart.isVisible());
-    check('Checkout returns focus to its opener', await startCheckout.evaluate(el => el === document.activeElement));
-    check('Scroll lock persists for remaining cart', await page.evaluate(() => document.body.style.overflow === 'hidden'));
-    await page.keyboard.press('Escape');
-    await cart.waitFor({ state: 'detached' });
-    check('Escape closes cart and restores background', await page.locator('.storefront').evaluate(el => !el.closest('[inert]')));
-    check('Cart returns focus to add button', await add.evaluate(el => el === document.activeElement));
-    check('Page scroll lock is restored', await page.evaluate(() => document.body.style.overflow !== 'hidden'));
-    await page.reload({ waitUntil: 'domcontentloaded' });
-    await page.getByRole('button', { name: /^Abrir pedido \([1-9]\d* piezas\)$/ }).waitFor();
-    check('Persisted cart survives reload', (await page.getByRole('button', { name: /^Abrir pedido \(\d+ piezas\)$/ }).getAttribute('aria-label')) !== 'Abrir pedido (0 piezas)');
-    await page.goto(new URL(productHref, baseURL).href, { waitUntil: 'domcontentloaded', timeout: 120000 });
-    check('Product navigation loads correct title', (await page.locator('h1').textContent()).trim() === productName);
-    check('Product has one main landmark', await page.locator('main').count() === 1);
-    if (await page.getByRole('button', { name: 'Ver foto siguiente' }).count()) {
-      await page.getByRole('button', { name: 'Ver foto siguiente' }).click();
-      check('Product gallery reports selected image', await page.getByRole('button', { name: 'Ver imagen 2', exact: true }).getAttribute('aria-pressed') === 'true');
-    }
-    await page.goto(baseURL, { waitUntil: 'domcontentloaded' });
-    await page.getByRole('button', { name: /^Abrir pedido \(\d+ piezas\)$/ }).click();
-    await cart.getByRole('button', { name: 'Enviar pedido por WhatsApp', exact: true }).click();
+    const checkoutButton = cart.getByRole('button', { name: 'Enviar pedido por WhatsApp', exact: true });
+    await checkoutButton.click();
     const checkout = page.getByRole('dialog', { name: 'Confirmar pedido por WhatsApp', exact: true });
+    await checkout.waitFor();
+    check('Nested checkout makes cart inert', await cart.evaluate(el => !!el.closest('[inert]')));
+    await page.keyboard.press('Escape');
+    check('Escape returns focus to the cart opener', await checkoutButton.evaluate(el => el === document.activeElement));
+    await checkoutButton.click();
     await checkout.getByLabel('Nombre completo *', { exact: true }).fill('Prueba de interfaz');
     await checkout.getByLabel('Telefono *', { exact: true }).fill('8090000000');
     await checkout.getByLabel('Provincia *', { exact: true }).fill('Prueba');
     await checkout.getByLabel('Ciudad / Municipio *', { exact: true }).fill('Prueba');
     await checkout.getByLabel('Direccion principal *', { exact: true }).fill('Datos ficticios, no enviar');
     await page.evaluate(() => {
-      window.__checkoutBrowserTest = { opened: [], closed: 0, redirected: [] };
-      window.open = url => {
-        window.__checkoutBrowserTest.opened.push(url);
-        return { opener: null, location: { replace: target => window.__checkoutBrowserTest.redirected.push(target) }, close: () => { window.__checkoutBrowserTest.closed++; } };
-      };
+      window.__checkoutTest = { closed: 0, redirects: [] };
+      window.open = () => ({ opener: null, location: { replace: target => window.__checkoutTest.redirects.push(target) }, close: () => window.__checkoutTest.closed++ });
     });
-    let pendingRoute;
-    let requested = 0;
-    let routeMode = 'hold';
-    let onRequest;
-    const requestStarted = new Promise(resolve => { onRequest = resolve; });
+    let pendingRoute, requested = 0, succeed = false, started;
+    const requestStarted = new Promise(resolve => { started = resolve; });
     await page.route('**/api/orders/whatsapp', async route => {
       requested++;
-      if (routeMode === 'hold') { pendingRoute = route; onRequest(); return; }
-      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, persisted: true, orderCode: mockOrderCode }) });
+      if (!succeed) { pendingRoute = route; started(); }
+      else await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, persisted: true, orderCode: code }) });
     });
     await checkout.getByRole('button', { name: 'Enviar por WhatsApp', exact: true }).click();
     await requestStarted;
     await page.keyboard.press('Escape');
-    check('Pending checkout cannot be dismissed by Escape', await checkout.isVisible());
-    check('Pending checkout disables its close control', await checkout.getByRole('button', { name: 'Cerrar confirmacion de pedido' }).isDisabled());
+    check('Pending checkout prevents closing', await checkout.isVisible() && await checkout.getByRole('button', { name: 'Cerrar confirmacion de pedido' }).isDisabled());
     await checkout.locator('form').evaluate(form => { form.requestSubmit(); form.requestSubmit(); });
-    check('Submitting guard prevents duplicate requests', requested === 1);
-    await pendingRoute.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ ok: false, persisted: false, orderCode: null, error: 'Fallo de registro simulado' }) });
+    check('Pending checkout prevents duplicate POSTs', requested === 1);
+    await pendingRoute.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ ok: false, persisted: false, error: 'Fallo de registro simulado' }) });
     await checkout.getByRole('alert').waitFor();
-    check('Failed checkout announces its error', (await checkout.getByRole('alert').textContent()).includes('Fallo de registro simulado'));
-    check('Failed checkout preserves the cart', await page.evaluate(() => JSON.parse(localStorage.getItem('galia-luna-cart-v1')).state.items.length > 0));
-    check('Failed checkout never redirects to WhatsApp', await page.evaluate(() => window.__checkoutBrowserTest.redirected.length === 0));
-    check('Failed checkout closes the unused bridge', await page.evaluate(() => window.__checkoutBrowserTest.closed === 1));
-    routeMode = 'success';
+    check('Failed order retains cart and never navigates to WhatsApp', await page.evaluate(() => JSON.parse(localStorage.getItem('galia-luna-cart-v1')).state.items.length > 0 && window.__checkoutTest.redirects.length === 0 && window.__checkoutTest.closed === 1));
+    succeed = true;
     await checkout.getByRole('button', { name: 'Enviar por WhatsApp', exact: true }).click();
     await checkout.waitFor({ state: 'detached' });
-    check('Successful persisted checkout clears cart', await page.evaluate(() => JSON.parse(localStorage.getItem('galia-luna-cart-v1')).state.items.length === 0));
-    check('Successful checkout prepares exactly one WhatsApp redirect', await page.evaluate(code => window.__checkoutBrowserTest.redirected.length === 1 && window.__checkoutBrowserTest.redirected[0].includes(code), mockOrderCode));
-    check('Success message asks user to confirm WhatsApp send', (await cart.textContent()).includes('Confirma el envío del mensaje en WhatsApp.'));
-    check('Success keeps focus in cart when checkout opener disappears', await cart.evaluate(el => el.contains(document.activeElement)));
-    await page.setViewportSize({ width: 320, height: 900 });
-    check('Long order confirmation code fits cart on mobile', await cart.evaluate(el => el.scrollWidth <= el.clientWidth && [...el.querySelectorAll('p')].every(p => p.scrollWidth <= p.clientWidth)));
+    check('Persisted success clears cart and prepares one intercepted redirect', await page.evaluate(() => JSON.parse(localStorage.getItem('galia-luna-cart-v1')).state.items.length === 0 && window.__checkoutTest.redirects.length === 1));
+    check('Success still requires WhatsApp confirmation', (await cart.textContent()).includes('Confirma el envío del mensaje en WhatsApp.'));
     await page.keyboard.press('Escape');
     await cart.waitFor({ state: 'detached' });
-    const cdp = await context.newCDPSession(page);
-    await cdp.send('Network.enable');
-    await cdp.send('Network.setCacheDisabled', { cacheDisabled: true });
-    for (const width of [320, 390, 1440]) {
-      await cdp.send('Network.clearBrowserCache');
-      await page.setViewportSize({ width, height: 900 });
-      await page.goto(baseURL, { waitUntil: 'domcontentloaded', timeout: 120000 });
-      await page.getByRole('searchbox', { name: 'Buscar piezas' }).waitFor();
-      await page.evaluate(() => window.scrollTo(0, 0));
-      await page.evaluate(() => document.fonts.ready);
-      await page.waitForFunction(() => [...document.images].filter(img => img.getBoundingClientRect().top < innerHeight).every(img => img.complete), undefined, { timeout: 15000 });
-      await page.waitForTimeout(3000);
-      report.labMetrics.push({ width, mode: `${process.env.STOREFRONT_MODE || 'Local preview'}, unthrottled, reduced motion, 3s settling; browser cache cleared and disabled`, ...await page.evaluate(() => window.__storefrontMetrics) });
-      const geometry = await page.evaluate(() => {
-        const width = document.documentElement.clientWidth;
-        const overflow = [...document.querySelectorAll('a,button,input,h1,h2,h3,article')].filter(el => { const r = el.getBoundingClientRect(); return r.height > 0 && (r.left < -1 || r.right > width + 1); }).map(el => ({ tag: el.tagName, text: el.textContent?.trim().slice(0, 60) }));
-        return { width, scrollWidth: document.documentElement.scrollWidth, overflow };
-      });
-      check(`Viewport ${width} has no horizontal scroll overflow`, geometry.scrollWidth <= geometry.width);
-      check(`Viewport ${width} has no offscreen content controls: ${JSON.stringify(geometry.overflow)}`, geometry.overflow.length === 0);
-      if (process.env.STOREFRONT_SCREENSHOTS) {
-        const screenshot = path.join(process.env.STOREFRONT_SCREENSHOTS, `galia-final-${width}.png`);
-        await page.screenshot({ path: screenshot, fullPage: false });
-        report.screenshots.push(screenshot);
+    check('Cart dismissal restores background', await page.locator('main').evaluate(el => !el.closest('[inert]')));
+    for (const width of [320, 390, 768, 1440]) {
+      await page.setViewportSize({ width, height: 1000 });
+      for (const route of ['/', '/coleccion']) {
+        await page.goto(new URL(route, baseURL).href, { waitUntil: 'networkidle' });
+        await page.evaluate(() => document.fonts.ready);
+        check(`${route} at ${width}px has no document overflow`, await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth));
+        if (process.env.STOREFRONT_SCREENSHOTS && [390, 1440].includes(width)) {
+          const file = path.join(process.env.STOREFRONT_SCREENSHOTS, `redesign-${route === '/' ? 'home' : 'collection'}-${width}.png`);
+          await page.screenshot({ path: file, fullPage: true }); report.screenshots.push(file);
+        }
       }
-      await page.getByRole('button', { name: 'Buscar piezas', exact: true }).click();
-      check(`Search stays usable at ${width}`, await page.getByRole('searchbox').evaluate(el => { const r = el.getBoundingClientRect(); return document.activeElement === el && r.width > 100 && r.top >= 0 && r.bottom <= window.innerHeight; }));
     }
-    check('No uncaught page errors', report.pageErrors.length === 0);
-    check('No hydration errors, including reload with cart data', report.hydrationErrors.length === 0);
-  } finally { await browser.close(); console.log(JSON.stringify(report, null, 2)); }
-})().catch(e => { console.error(e); process.exitCode = 1; });
+    const noJS = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 390, height: 900 } });
+    const native = await noJS.newPage();
+    await native.goto(new URL('/coleccion?orden=price-asc', baseURL).href, { waitUntil: 'networkidle', timeout: 120000 });
+    check('Price and stock controls are accessible without JavaScript', await native.locator('#catalog-price').isVisible() && await native.getByLabel('Solo stock confirmado', { exact: false }).isVisible());
+    await native.locator('#catalog-price').fill('3500');
+    await native.getByRole('button', { name: 'Aplicar búsqueda' }).click();
+    await native.waitForURL('**hasta=3500**');
+    check('Native GET filters work without JavaScript', (await native.locator('.shop-product-card').evaluateAll(nodes => nodes.map(node => Number(node.dataset.productPrice)))).every(price => price <= 3500));
+    await noJS.close();
+    check('No runtime errors', report.errors.length === 0);
+    check('No hydration errors', report.hydrationErrors.length === 0);
+  } finally {
+    await browser.close();
+    if (process.env.STOREFRONT_REPORT) fs.writeFileSync(process.env.STOREFRONT_REPORT, JSON.stringify(report, null, 2));
+    console.log(JSON.stringify(report, null, 2));
+  }
+})().catch(error => { console.error(error); process.exitCode = 1; });

@@ -63,6 +63,8 @@ export async function POST(request: Request) {
 
   revalidatePath("/");
   revalidatePath("/sitemap.xml");
+  revalidatePath("/coleccion");
+  revalidatePath("/coleccion/[categoria]", "page");
   revalidatePath("/product/[slug]", "page");
 
   const slugs = extractSlugs(payload);
@@ -73,7 +75,7 @@ export async function POST(request: Request) {
   return NextResponse.json({
     ok: true,
     revalidatedTags: SANITY_CACHE_TAG_LIST,
-    revalidatedPaths: ["/", "/sitemap.xml", "/product/[slug]", ...slugs.map((slug) => `/product/${slug}`)],
+    revalidatedPaths: ["/", "/sitemap.xml", "/coleccion", "/coleccion/[categoria]", "/product/[slug]", ...slugs.map((slug) => `/product/${slug}`)],
   });
 }
 

@@ -3,6 +3,9 @@ const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   images: {
+    loader: "custom",
+    loaderFile: "./lib/sanityImageLoader.ts",
+    qualities: [60, 70, 75, 80, 85, 90],
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 2678400,
     deviceSizes: [320, 420, 640, 750, 828, 1080, 1200, 1600],

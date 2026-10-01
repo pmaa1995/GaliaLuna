@@ -93,7 +93,7 @@ export default function SignInPage() {
                   Crear cuenta
                 </Link>
                 <Link
-                  href="/"
+                  href="/coleccion"
                   className="inline-flex items-center rounded-full border border-[color:var(--line)] bg-[color:var(--paper)] px-3.5 py-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)]"
                 >
                   Volver al catalogo
