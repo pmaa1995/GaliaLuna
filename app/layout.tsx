@@ -2,9 +2,11 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import { Cormorant_Garamond, Inter } from "next/font/google";
 
+import { clerkLocalization } from "../lib/clerkLocalization";
 import { SITE_URL } from "../lib/seo";
 import "./globals.css";
 import "./storefront.css";
+import "./account.css";
 
 const playfair = Cormorant_Garamond({
   subsets: ["latin"],
@@ -45,7 +47,7 @@ export default function RootLayout({
   const clerkFrontendApi = process.env.NEXT_PUBLIC_CLERK_FRONTEND_API;
   const clerkOrigin = clerkFrontendApi ? `https://${clerkFrontendApi}` : null;
   const content = clerkEnabled ? (
-    <ClerkProvider>{children}</ClerkProvider>
+    <ClerkProvider localization={clerkLocalization}>{children}</ClerkProvider>
   ) : (
     children
   );

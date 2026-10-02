@@ -216,3 +216,45 @@
   .shop-icon-button { gap:5px; }
   .shop-product-info h3 { font-size:19px; }
 }
+
+/* Account access: minimal two-column layout around Clerk's SignIn/SignUp (.cl-* are Clerk's stable element classes). */
+.auth { padding-block:clamp(48px,8vw,108px); }
+.auth-grid { display:grid; grid-template-columns:1fr 1fr; max-width:940px; margin-inline:auto; }
+.auth-form { min-width:0; padding-right:clamp(32px,6vw,88px); border-right:1px solid var(--line-strong); }
+.auth-alt { min-width:0; padding-left:clamp(32px,6vw,88px); }
+.auth .cl-headerTitle, .auth-unavailable h1, .auth-alt h2 { font-family:var(--font-playfair),serif; font-size:34px; font-weight:500; line-height:1.08; letter-spacing:-.02em; text-align:left; }
+.auth .cl-headerSubtitle, .auth-unavailable p, .auth-alt > p:not(.auth-guest) { margin-top:10px; font-size:13px; line-height:1.75; color:var(--ink-soft); text-align:left; }
+.auth-button { display:flex; align-items:center; justify-content:center; width:100%; min-height:50px; margin-top:30px; border:1px solid var(--ink); font-size:11px; font-weight:500; letter-spacing:.16em; text-transform:uppercase; transition:background-color .2s,color .2s; }
+.auth-button:hover { background:var(--ink); color:#fff; }
+.auth-guest { margin-top:22px; font-size:12px; line-height:1.8; color:var(--ink-soft); }
+.auth-guest a { color:var(--ink); text-decoration:underline; text-underline-offset:4px; }
+.auth .cl-rootBox, .auth .cl-cardBox { width:100%; max-width:none; }
+.auth .cl-cardBox { border:0; border-radius:0; box-shadow:none; background:transparent; overflow:visible; }
+.auth .cl-card { padding:0; border:0; border-radius:0; box-shadow:none; background:transparent; gap:30px; }
+.auth .cl-header { align-items:flex-start; gap:0; }
+.auth .cl-form { gap:26px; }
+.auth .cl-formFieldLabel { font-size:10px; font-weight:500; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-soft); }
+.auth .cl-formFieldInput { min-height:44px; padding-inline:0; border:0; border-bottom:1px solid var(--ink); border-radius:0; box-shadow:none; background:transparent; font-size:16px; }
+.auth .cl-formFieldInput:focus, .auth .cl-formFieldInput:focus-visible { outline:none; box-shadow:inset 0 -2px 0 var(--ink); }
+.auth .cl-formFieldInputShowPasswordButton { margin-right:-8px; }
+.auth .cl-formButtonPrimary { min-height:50px; border:0; border-radius:0; box-shadow:none; background:var(--ink); background-image:none; color:#fff; font-size:11px; font-weight:500; letter-spacing:.16em; text-transform:uppercase; }
+.auth .cl-formButtonPrimary:hover, .auth .cl-formButtonPrimary:focus { background:#000; }
+/* Clerk layers its own shadows on this button with higher specificity. */
+.auth .cl-formButtonPrimary, .auth .cl-formButtonPrimary:hover, .auth .cl-formButtonPrimary:focus { box-shadow:none !important; }
+.auth .cl-formButtonPrimary::after, .auth .cl-formButtonPrimary svg { display:none; }
+.auth .cl-socialButtonsBlockButton, .auth .cl-alternativeMethodsBlockButton { min-height:48px; border:1px solid var(--line-strong); border-radius:0; box-shadow:none; }
+.auth .cl-dividerLine { background:var(--line); }
+.auth .cl-otpCodeFieldInput { border:0; border-bottom:1px solid var(--ink); border-radius:0; box-shadow:none; }
+.auth .cl-formFieldAction, .auth .cl-formResendCodeLink, .auth .cl-identityPreviewEditButton, .auth .cl-backLink, .auth .cl-footerActionLink { color:var(--ink); text-decoration:underline; text-underline-offset:4px; }
+.auth .cl-footer { margin-top:2px; border:0; background:transparent; background-image:none; }
+.auth .cl-footer > * { padding:0; border:0; background:transparent; }
+/* The other column already offers sign-up / sign-in. */
+.auth .cl-footerAction { display:none; }
+@media (max-width:767px) {
+  .auth { padding-block:36px 64px; }
+  .auth-grid { grid-template-columns:minmax(0,1fr); }
+  .auth-form { padding:0; border:0; }
+  .auth-alt { margin-top:44px; padding:36px 0 0; border-top:1px solid var(--line-strong); }
+  .auth .cl-headerTitle, .auth-unavailable h1, .auth-alt h2 { font-size:30px; }
+  .auth-alt h2 { font-size:24px; }
+}

@@ -12,9 +12,9 @@ export const ORDER_STATUS_VALUES = [
 export type OrderStatus = (typeof ORDER_STATUS_VALUES)[number];
 
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
-  pending_confirmation: "Pendiente de confirmacion",
+  pending_confirmation: "Pendiente de confirmación",
   confirmed: "Confirmado",
-  in_preparation: "En preparacion",
+  in_preparation: "En preparación",
   shipped: "Enviado",
   delivered: "Entregado",
   cancelled: "Cancelado",

@@ -99,6 +99,8 @@ test("account pages loaded without a secret reach session checks once runtime bi
       [prefix + "lib/contact"]: {},
       [prefix + "lib/orders/customerRepository"]: {},
       [prefix + "components/account/orderUi"]: {},
+      [prefix + "components/account/AccountDashboard"]: "Dashboard",
+      [prefix + "components/store/StoreShell"]: "StoreShell",
       "./actions": {},
     };
     const page = load(file, dependencies, env).default;
@@ -116,9 +118,12 @@ test("security page re-evaluates runtime availability and the account layout opt
   const page = load("app/mi-cuenta/seguridad/[[...index]]/page.tsx", {
     ...uiDependencies,
     "@clerk/nextjs": { UserProfile: "UserProfile" },
+    "../../../../components/auth/clerkFormAppearance": { clerkFormAppearance: {} },
+    "../../../../components/store/StoreShell": "StoreShell",
     "../../../../lib/clerkConfig": load("lib/clerkConfig.ts", {}, env),
   }, env).default;
-  assert.match(JSON.stringify(page()), /cuando Clerk este configurado/);
+  assert.match(JSON.stringify(page()), /cuando el acceso de cuentas esté activo/);
+  assert.doesNotMatch(JSON.stringify(page()), /UserProfile/);
   env.CLERK_SECRET_KEY = "test-only-runtime-binding";
   assert.match(JSON.stringify(page()), /UserProfile/);
   const layout = load("app/mi-cuenta/layout.tsx");
