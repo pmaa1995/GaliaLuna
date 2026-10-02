@@ -5,10 +5,7 @@ import { ChevronLeft, ShoppingBag } from "lucide-react";
 
 import { getOrderDetailByCodeForCustomer } from "../../../../lib/orders/customerRepository";
 import { CustomerOrderDetailCard } from "../../../../components/account/orderUi";
-
-const clerkEnabled = Boolean(
-  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY,
-);
+import { isClerkServerConfigured } from "../../../../lib/clerkConfig";
 
 type PageProps = {
   params: Promise<{
@@ -26,7 +23,7 @@ function decodeOrderCode(value: string) {
 
 export default async function AccountOrderDetailPage({ params }: PageProps) {
   const { codigo } = await params;
-  if (!clerkEnabled) {
+  if (!isClerkServerConfigured()) {
     redirect("/mi-cuenta");
   }
 

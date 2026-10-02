@@ -100,3 +100,7 @@ npx wrangler dev --local --ip 127.0.0.1 --port 3210
 ```
 
 Abrir http://127.0.0.1:3210 desde Windows. La advertencia de OpenNext sobre Windows nativo no aplica a esta compilación Linux. Se conserva la compatibility_date existente: cambiarla exige su propia validación. Los resultados detallados del rediseño y sus capturas están en el informe de entrega.
+
+Para una compilación destinada a producción, proporciona `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` con la clave pública del sitio. Las variables `NEXT_PUBLIC_*` quedan incorporadas al cliente durante el build. La clave privada `CLERK_SECRET_KEY` debe estar configurada como secreto del Worker; no debe incluirse en fuentes, artefactos de entrega ni variables públicas.
+
+Las rutas de `/mi-cuenta` se renderizan por petición y su disponibilidad se evalúa después de cargar los bindings. El middleware carga Clerk dentro de la primera petición configurada para que el SDK reciba esos secretos a tiempo. Una compilación sin clave privada no debe incluir `/mi-cuenta` ni sus subrutas en `.next/prerender-manifest.json`. Antes de publicar directamente, identifica el Worker existente y conserva sus variables (`wrangler deploy --keep-vars`) y secretos. La vista previa local usa su propia configuración; no valida una sesión real con claves de producción.

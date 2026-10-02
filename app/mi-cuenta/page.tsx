@@ -14,6 +14,7 @@ import {
 import AccountOrderHistoryPanel from "../../components/account/AccountOrderHistoryPanel";
 import AccountSignOutButton from "../../components/auth/AccountSignOutButton";
 import { isAdminFromClerkUser } from "../../lib/admin/auth";
+import { isClerkServerConfigured } from "../../lib/clerkConfig";
 import {
   CALL_OWNER_NUMBER,
   CALL_PHONE_DISPLAY,
@@ -50,10 +51,6 @@ const emptyProfile: DeliveryProfile = {
   reference: "",
   deliveryNotes: "",
 };
-
-const clerkEnabled = Boolean(
-  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY,
-);
 
 function asString(value: unknown) {
   return typeof value === "string" ? value : "";
@@ -136,7 +133,7 @@ export default async function AccountPage({
 }: {
   searchParams?: Promise<PageSearchParams>;
 }) {
-  if (!clerkEnabled) {
+  if (!isClerkServerConfigured()) {
     return (
       <main className="mx-auto min-h-[calc(100vh-4rem)] max-w-[960px] px-4 py-8 sm:px-6 lg:px-8">
         <section className="border border-[color:var(--line)] bg-[color:var(--paper)] p-6 sm:p-8">

@@ -4,10 +4,7 @@ import { auth } from "@clerk/nextjs/server";
 import { ChevronLeft, ShoppingBag } from "lucide-react";
 
 import AccountOrderHistoryPanel from "../../../components/account/AccountOrderHistoryPanel";
-
-const clerkEnabled = Boolean(
-  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY,
-);
+import { isClerkServerConfigured } from "../../../lib/clerkConfig";
 
 type PageSearchParams = {
   page?: string | string[];
@@ -26,7 +23,7 @@ export default async function AccountOrdersPage({
 }: {
   searchParams?: Promise<PageSearchParams>;
 }) {
-  if (!clerkEnabled) {
+  if (!isClerkServerConfigured()) {
     redirect("/mi-cuenta");
   }
 

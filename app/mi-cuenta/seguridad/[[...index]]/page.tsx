@@ -1,13 +1,10 @@
 ﻿import Link from "next/link";
 import { UserProfile } from "@clerk/nextjs";
 import { ShieldCheck } from "lucide-react";
-
-const clerkEnabled = Boolean(
-  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY,
-);
+import { isClerkServerConfigured } from "../../../../lib/clerkConfig";
 
 export default function AccountSecurityPage() {
-  if (!clerkEnabled) {
+  if (!isClerkServerConfigured()) {
     return (
       <main className="mx-auto min-h-[calc(100vh-4rem)] max-w-[980px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
         <section className="border border-[color:var(--line)] bg-[color:var(--paper)] p-5 sm:p-7">
