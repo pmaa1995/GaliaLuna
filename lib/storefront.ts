@@ -8,6 +8,13 @@ export const collectionCategories = [
   { slug: "carteras", label: "Carteras", description: "El complemento para llevar tu estilo contigo." },
 ] as const;
 
+export type CollectionCategory = (typeof collectionCategories)[number];
+
+// Navigation only lists categories with published pieces; empty routes stay reachable by URL.
+export function availableCategories(products: Product[]): CollectionCategory[] {
+  return collectionCategories.filter((category) => products.some((product) => product.category === category.label));
+}
+
 export function categoryFromSlug(slug: string) {
   return collectionCategories.find((category) => category.slug === slug);
 }

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Search, SlidersHorizontal, X, ArrowRight } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { COLLECTION_PAGE_SIZE, collectionCategories, defaultFilters, filtersQuery, parseStoreFilters, selectProducts, type StoreFilters } from "../../lib/storefront";
+import { COLLECTION_PAGE_SIZE, defaultFilters, filtersQuery, parseStoreFilters, selectProducts, type StoreFilters } from "../../lib/storefront";
 import type { Product, ProductCategory } from "../../types/product";
 import ProductCard from "./ProductCard";
 
@@ -49,10 +49,6 @@ export default function CatalogBrowser({ products, initialFilters, category, bas
   const reset = () => update({ ...defaultFilters });
   return <div className="shop-catalog shop-container" id="catalogo">
     <noscript><style>{`.shop .shop-filter-panel[hidden] {display:flex !important}.shop .shop-filter-toggle {display:none !important}`}</style></noscript>
-    <nav className="shop-catalog-categories" aria-label="Filtrar por categoría">
-      <Link href="/coleccion" aria-current={!category ? "page" : undefined}>Todo <span>{products.length}</span></Link>
-      {collectionCategories.map(({ slug, label }) => <Link key={slug} href={`/coleccion/${slug}`} aria-current={category === label ? "page" : undefined}>{label} <span>{products.filter((product) => product.category === label).length}</span></Link>)}
-    </nav>
     <form action={basePath} className="shop-catalog-form" onSubmit={(event) => { event.preventDefault(); update({ q: filters.q.trim() }, "replace"); }}>
       <div className="shop-catalog-toolbar">
         <div className="shop-catalog-search"><Search size={18} aria-hidden="true" /><label className="sr-only" htmlFor="catalog-search">Buscar piezas</label><input id="catalog-search" name="q" type="search" placeholder="Buscar en la colección" value={filters.q} maxLength={120} onChange={(event) => update({ q: event.target.value }, "replace")} /><button type="submit" className="shop-icon-button" aria-label="Aplicar búsqueda"><ArrowRight size={17} /></button></div>
@@ -74,6 +70,6 @@ export default function CatalogBrowser({ products, initialFilters, category, bas
     }}>
       {visible.length ? <div className="shop-product-grid">{visible.map((product, index) => <ProductCard key={product._id} product={product} priority={index === 0} />)}</div> : <div className="shop-empty"><Search size={30} strokeWidth={1} /><h2>{activeFilters ? "No encontramos esa combinación." : "Pronto habrá más por descubrir."}</h2><p>{activeFilters ? "Prueba con otro nombre o ajusta los filtros para descubrir más piezas." : "Puedes explorar las demás categorías de nuestra colección."}</p>{activeFilters ? <a href={basePath} className="shop-button shop-button-primary" onClick={(event) => { event.preventDefault(); reset(); }}>Ver todas las piezas</a> : <Link href="/coleccion" className="shop-button shop-button-primary">Explorar la colección</Link>}</div>}
     </div>
-    {results.length > 0 && <div className="shop-load-more"><p>Mostrando {visible.length} de {results.length} piezas</p><div className="shop-progress" aria-hidden="true"><span style={{ width: `${visible.length / results.length * 100}%` }} /></div>{visible.length < results.length && <a href={basePath + filtersQuery({ ...filters, page: visiblePage + 1 })} className="shop-button shop-button-outline" onClick={(event) => { event.preventDefault(); update({ page: visiblePage + 1 }); }}>Ver más piezas <ArrowRight size={16} /></a>}</div>}
+    {visible.length < results.length && <div className="shop-load-more"><p>Mostrando {visible.length} de {results.length} piezas</p><div className="shop-progress" aria-hidden="true"><span style={{ width: `${visible.length / results.length * 100}%` }} /></div><a href={basePath + filtersQuery({ ...filters, page: visiblePage + 1 })} className="shop-button shop-button-outline" onClick={(event) => { event.preventDefault(); update({ page: visiblePage + 1 }); }}>Ver más piezas <ArrowRight size={16} /></a></div>}
   </div>;
 }

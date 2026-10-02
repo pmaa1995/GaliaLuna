@@ -26,12 +26,14 @@ function ProductCard({ product, priority = false, onAddToCart }: ProductCardProp
     else { addItem(toCartProductSnapshot(product), 1); openCart(); }
   };
   return <article className="shop-product-card" data-product-price={product.price}>
-    <Link href={href} className="shop-product-image" aria-label={`Ver ${product.name}`}>
-      <ProgressiveImage src={image.url} alt={image.alt || product.name} fill priority={priority} quality={75} sizes="(max-width: 639px) calc(50vw - 24px), (max-width: 1023px) calc(33vw - 24px), (max-width: 1519px) calc(25vw - 32px), 340px" placeholder="blur" blurDataURL={PRODUCT_IMAGE_BLUR_DATA_URL} />
-      {(soldOut || product.badge) && <span className="shop-product-badge">{soldOut ? "Agotado" : product.badge}</span>}
-    </Link>
+    <div className="shop-product-media">
+      <Link href={href} className="shop-product-image" aria-label={`Ver ${product.name}`}>
+        <ProgressiveImage src={image.url} alt={image.alt || product.name} fill priority={priority} quality={75} sizes="(max-width: 639px) calc(50vw - 24px), (max-width: 1023px) calc(33vw - 24px), (max-width: 1519px) calc(25vw - 32px), 340px" placeholder="blur" blurDataURL={PRODUCT_IMAGE_BLUR_DATA_URL} />
+        {(soldOut || product.badge) && <span className="shop-product-badge">{soldOut ? "Agotado" : product.badge}</span>}
+      </Link>
+      {!soldOut && <button type="button" className="shop-product-add" onClick={add} aria-label={`Añadir ${product.name} al pedido`} title="Añadir al pedido"><Plus size={18} aria-hidden="true" /></button>}
+    </div>
     <div className="shop-product-info"><p className="shop-product-category">{product.category}</p><h3><Link href={href}>{product.name}</Link></h3><p className="shop-product-price">{formatDOP(product.price)}</p></div>
-    <button type="button" className="shop-product-add" onClick={add} disabled={soldOut} aria-label={soldOut ? `${product.name}: agotado` : `Añadir ${product.name} al pedido`}><span>{soldOut ? "Agotado" : "Añadir al pedido"}</span>{!soldOut && <Plus size={16} aria-hidden="true" />}</button>
   </article>;
 }
 

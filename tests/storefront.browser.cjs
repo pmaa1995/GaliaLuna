@@ -36,7 +36,7 @@ const code = 'GL-20261001-0123456789ABCDEF0123456789ABCDEF';
     await page.goto(new URL('/coleccion', baseURL).href, { waitUntil: 'networkidle' });
     const cards = page.locator('#resultados-catalogo .shop-product-card');
     const initialCount = await cards.count();
-    const totalCount = Number(await page.locator('.shop-catalog-categories a').first().locator('span').textContent());
+    const totalCount = parseInt(await page.locator('.shop-results-summary p').textContent(), 10);
     check('Collection renders all products up to 24 with an accurate total', initialCount === Math.min(totalCount, 24) && initialCount > 0 && await page.locator('h1').count() === 1);
     const productName = (await cards.first().locator('h3').textContent()).trim();
     const search = page.locator('#catalog-search');

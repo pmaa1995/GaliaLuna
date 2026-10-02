@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { CSSProperties } from "react";
 import { ArrowRight, ArrowUpRight, MessageCircle, PackageCheck, ShoppingBag } from "lucide-react";
 import { WHATSAPP_OWNER_NUMBER } from "../../lib/contact";
 import { collectionCategories, selectHomeProducts } from "../../lib/storefront";
@@ -23,15 +24,15 @@ export default function HomeEditorial({ products, heroProducts, featuredProduct 
     </section>
 
     <section className="shop-section shop-container" id="colecciones" aria-labelledby="categories-title">
-      <div className="shop-section-heading"><div><p className="shop-eyebrow">A TU MANERA</p><h2 id="categories-title">Encuentra tu pieza.</h2></div><Link href="/coleccion" className="shop-text-link">Ver todo <ArrowRight size={16} /></Link></div>
-      <div className="shop-category-grid" style={{ gridTemplateColumns: `repeat(${Math.max(categories.length, 1)}, minmax(0, 1fr))` }}>{categories.map((category) => {
+      <div className="shop-section-heading"><div><p className="shop-eyebrow">A TU MANERA</p><h2 id="categories-title">Encuentra tu pieza.</h2></div></div>
+      <div className="shop-category-grid" style={{ "--category-count": Math.max(categories.length, 1) } as CSSProperties}>{categories.map((category) => {
         const photo = category.products[0]?.images[0];
         return <Link href={`/coleccion/${category.slug}`} key={category.slug} className="shop-category-tile"><div className="shop-category-photo">{photo ? <ProgressiveImage src={photo.url} alt="" fill quality={70} sizes="(max-width: 767px) 40vw, 25vw" /> : <span className="shop-category-monogram" aria-hidden="true">GL</span>}</div><div><h3>{category.label}</h3><ArrowUpRight size={17} aria-hidden="true" /></div><span>{category.products.length} {category.products.length === 1 ? "pieza" : "piezas"}</span></Link>;
       })}</div>
     </section>
 
     <section className="shop-selection" id="catalogo" aria-labelledby="selection-title"><div className="shop-container shop-section">
-      <div className="shop-section-heading"><div><p className="shop-eyebrow">PARA DESCUBRIR</p><h2 id="selection-title">La selección de Galia Luna.</h2></div><Link href="/coleccion" className="shop-text-link">Explorar todas las piezas <ArrowRight size={16} /></Link></div>
+      <div className="shop-section-heading"><div><p className="shop-eyebrow">PARA DESCUBRIR</p><h2 id="selection-title">La selección de Galia Luna.</h2></div></div>
       {selection.length ? <div className="shop-product-grid">{selection.map((product) => <ProductCard key={product._id} product={product} />)}</div> : <p className="shop-empty">Estamos preparando nuestra selección. Vuelve pronto para descubrir las piezas.</p>}
       {products.length > selection.length && <div className="shop-selection-more"><p>Esto es solo una selección. Descubre las {products.length} piezas de la colección.</p><Link href="/coleccion" className="shop-button shop-button-primary">Ver colección completa <ArrowRight size={17} /></Link></div>}
     </div></section>

@@ -80,15 +80,15 @@ export default function ProductDetailView({ product, relatedProducts }: ProductD
             <span className="pdp__zoom-hint" aria-hidden="true"><ZoomIn size={16} />Ampliar</span>
           </button>
 
-          <div className="pdp__gallery-toolbar">
-            <p role="status" aria-live="polite" aria-atomic="true">Imagen {activeIndex + 1} de {gallery.length}</p>
-            {hasMultipleImages ? (
+          {hasMultipleImages ? (
+            <div className="pdp__gallery-toolbar">
+              <p role="status" aria-live="polite" aria-atomic="true">Imagen {activeIndex + 1} de {gallery.length}</p>
               <div className="pdp__gallery-arrows">
                 <button type="button" onClick={previousImage} aria-label="Ver foto anterior"><ChevronLeft size={18} /></button>
                 <button type="button" onClick={nextImage} aria-label="Ver foto siguiente"><ChevronRight size={18} /></button>
               </div>
-            ) : null}
-          </div>
+            </div>
+          ) : null}
 
           {hasMultipleImages ? (
             <div className="pdp__thumbnails" aria-label="Vistas de la pieza">
@@ -123,7 +123,7 @@ export default function ProductDetailView({ product, relatedProducts }: ProductD
                 <MessageCircle size={17} aria-hidden="true" />Consultar por WhatsApp
               </a>
             )}
-            <p className="pdp__purchase-note">El pago y la entrega se confirman con una asesora por WhatsApp. Puedes comprar sin crear una cuenta.</p>
+            <p className="pdp__purchase-note">El pago y la entrega se confirman con una asesora por WhatsApp. Puedes comprar sin crear una cuenta.{canOrder ? <> <a href={enquiryHref} target="_blank" rel="noopener noreferrer">¿Tienes dudas? Escríbenos.</a></> : null}</p>
           </div>
 
           {lastDirectOrder?.ok ? (
@@ -159,13 +159,12 @@ export default function ProductDetailView({ product, relatedProducts }: ProductD
               </div>
             </details>
           </div>
-          <a className="pdp__assistance" href={enquiryHref} target="_blank" rel="noopener noreferrer"><MessageCircle size={16} />¿Tienes alguna duda? Habla con una asesora.</a>
         </section>
       </div>
 
       {relatedProducts.length > 0 ? (
         <section className="pdp__related" aria-labelledby="related-title">
-          <div className="pdp__related-heading"><h2 id="related-title">Completa tu selección</h2><Link href="/coleccion">Ver la colección <ArrowRight size={16} /></Link></div>
+          <div className="pdp__related-heading"><h2 id="related-title">Completa tu selección</h2><Link href={categoryHref(product.category)}>Ver más {product.category.toLocaleLowerCase("es")} <ArrowRight size={16} /></Link></div>
           <div className="pdp__related-grid">{relatedProducts.slice(0, 4).map((item, index) => <ProductCard key={item._id} product={item} index={index} onAddToCart={addToOrder} />)}</div>
         </section>
       ) : null}
