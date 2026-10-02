@@ -2,6 +2,7 @@ import AdminOrdersView from "../../../components/admin/AdminOrdersView";
 import StoreShell from "../../../components/store/StoreShell";
 import { requireAdminUser } from "../../../lib/admin/auth";
 import {
+  getAdminMonthlySummary,
   getOrderDetailByCode,
   listOrdersForAdminPage,
 } from "../../../lib/orders/adminRepository";
@@ -12,6 +13,7 @@ type PageSearchParams = {
   q?: string | string[];
   pedido?: string | string[];
   page?: string | string[];
+  seleccionar?: string | string[];
 };
 
 const ADMIN_ORDERS_PAGE_SIZE = 12;
@@ -44,8 +46,10 @@ export default async function AdminOrdersPage({
   const q = (pickFirst(resolvedSearchParams?.q) ?? "").trim();
   const selectedOrderCode = (pickFirst(resolvedSearchParams?.pedido) ?? "").trim();
   const page = parsePage(pickFirst(resolvedSearchParams?.page));
+  const selecting = pickFirst(resolvedSearchParams?.seleccionar) === "1";
 
-  const [ordersPage, selectedOrder] = await Promise.all([
+  // Light D1 reads in parallel: the page, the open order and one grouped query for the summary.
+  const [ordersPage, selectedOrder, months] = await Promise.all([
     listOrdersForAdminPage({
       status: statusFilter,
       q,
@@ -53,6 +57,7 @@ export default async function AdminOrdersPage({
       pageSize: ADMIN_ORDERS_PAGE_SIZE,
     }),
     selectedOrderCode ? getOrderDetailByCode(selectedOrderCode) : Promise.resolve(null),
+    selecting ? Promise.resolve([]) : getAdminMonthlySummary(12),
   ]);
 
   return (
@@ -72,6 +77,8 @@ export default async function AdminOrdersPage({
         statusFilter={statusFilter}
         q={q}
         selectedOrder={selectedOrder}
+        months={months}
+        selecting={selecting}
       />
     </StoreShell>
   );

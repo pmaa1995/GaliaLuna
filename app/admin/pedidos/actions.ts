@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 
 import { requireAdminUser } from "../../../lib/admin/auth";
 import {
+  deleteOrders,
   getOrderDetailById,
   markOrderInventoryAdjustment,
   updateOrderStatusById,
@@ -108,3 +109,16 @@ export async function retryInventoryAdjustmentAction(formData: FormData) {
   redirect(returnTo);
 }
 
+export async function deleteOrdersAction(formData: FormData) {
+  await requireAdminUser();
+
+  const orderIds = formData.getAll("orderIds").map(parseOrderId).filter((id): id is number => id !== null);
+  const returnTo = safeReturnTo(formData.get("returnTo"));
+  // The panel asks for an explicit confirmation field before anything is removed.
+  if (orderIds.length && formData.get("confirmDelete") === "1") {
+    await deleteOrders(orderIds);
+    revalidatePath("/admin/pedidos");
+    revalidatePath("/mi-cuenta");
+  }
+  redirect(returnTo);
+}

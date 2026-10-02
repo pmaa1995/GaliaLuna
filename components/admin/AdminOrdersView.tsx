@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, MessageCircle, Phone, Search, X } from "lucide-react";
 
-import { retryInventoryAdjustmentAction, updateAdminOrderStatusAction } from "../../app/admin/pedidos/actions";
+import { deleteOrdersAction, retryInventoryAdjustmentAction, updateAdminOrderStatusAction } from "../../app/admin/pedidos/actions";
+import type { AdminMonthSummary } from "../../lib/orders/adminRepository";
 import { getAllowedNextStatuses } from "../../lib/orders/status";
 import {
   ORDER_STATUS_LABELS,
@@ -12,6 +13,10 @@ import {
 } from "../../lib/orders/types";
 import { formatDOP } from "../../types/product";
 import { AccountOrderStatusBadge, formatAccountOrderDateTime, formatPieces } from "../account/orderUi";
+import AdminSalesSummary from "./AdminSalesSummary";
+import SelectAllOrders from "./SelectAllOrders";
+
+const BULK_FORM_ID = "adm-bulk";
 
 // Buttons name the action, not the resulting state.
 const STATUS_ACTION_LABELS: Record<OrderStatus, string> = {
@@ -32,8 +37,9 @@ const STATUS_FILTER_LABELS: Record<OrderStatus, string> = {
   cancelled: "Cancelados",
 };
 
-export function buildAdminOrdersHref(params: { status: OrderStatus | "all"; q: string; page?: number; selectedOrderCode?: string }) {
+export function buildAdminOrdersHref(params: { status: OrderStatus | "all"; q: string; page?: number; selectedOrderCode?: string; selecting?: boolean }) {
   const search = new URLSearchParams();
+  if (params.selecting) search.set("seleccionar", "1");
   if (params.status !== "all") search.set("estado", params.status);
   if (params.q.trim()) search.set("q", params.q.trim());
   if (params.page && params.page > 1) search.set("page", String(params.page));
@@ -154,9 +160,11 @@ export interface AdminOrdersViewProps {
   statusFilter: OrderStatus | "all";
   q: string;
   selectedOrder: AdminOrderDetail | null;
+  months: AdminMonthSummary[];
+  selecting: boolean;
 }
 
-export default function AdminOrdersView({ adminEmail, orders, total, page, pageSize, hasPreviousPage, hasNextPage, statusFilter, q, selectedOrder }: AdminOrdersViewProps) {
+export default function AdminOrdersView({ adminEmail, orders, total, page, pageSize, hasPreviousPage, hasNextPage, statusFilter, q, selectedOrder, months, selecting }: AdminOrdersViewProps) {
   const listHref = buildAdminOrdersHref({ status: statusFilter, q, page });
   const detailHref = (orderCode: string) => `${buildAdminOrdersHref({ status: statusFilter, q, page, selectedOrderCode: orderCode })}#detalle`;
   const selectedReturnTo = selectedOrder ? buildAdminOrdersHref({ status: statusFilter, q, page, selectedOrderCode: selectedOrder.orderCode }) : listHref;
@@ -171,31 +179,56 @@ export default function AdminOrdersView({ adminEmail, orders, total, page, pageS
         </div>
       </header>
 
+      {selecting ? null : <AdminSalesSummary months={months} />}
+
       <div className="adm-filters">
         <form method="GET" action="/admin/pedidos" className="adm-search" role="search">
           {statusFilter !== "all" ? <input type="hidden" name="estado" value={statusFilter} /> : null}
+          {selecting ? <input type="hidden" name="seleccionar" value="1" /> : null}
           <label className="sr-only" htmlFor="adm-q">Buscar pedido o cliente</label>
           <input id="adm-q" type="search" name="q" defaultValue={q} placeholder="Buscar pedido o cliente" />
           <button type="submit" className="adm-btn adm-btn--primary" aria-label="Buscar"><Search size={17} /></button>
         </form>
         <nav className="adm-chips" aria-label="Filtrar por estado">
-          <Link href={buildAdminOrdersHref({ status: "all", q })} aria-current={statusFilter === "all" ? "page" : undefined}>Todos</Link>
+          <Link href={buildAdminOrdersHref({ status: "all", q, selecting })} aria-current={statusFilter === "all" ? "page" : undefined}>Todos</Link>
           {ORDER_STATUS_VALUES.map((status) => (
-            <Link key={status} href={buildAdminOrdersHref({ status, q })} aria-current={statusFilter === status ? "page" : undefined}>{STATUS_FILTER_LABELS[status]}</Link>
+            <Link key={status} href={buildAdminOrdersHref({ status, q, selecting })} aria-current={statusFilter === status ? "page" : undefined}>{STATUS_FILTER_LABELS[status]}</Link>
           ))}
         </nav>
       </div>
       <div className="adm-summary">
         <span>{total} {total === 1 ? "pedido" : "pedidos"}{statusFilter !== "all" ? ` · ${ORDER_STATUS_LABELS[statusFilter].toLocaleLowerCase("es")}` : ""}{q ? ` · «${q}»` : ""}</span>
-        {q || statusFilter !== "all" ? <Link href="/admin/pedidos">Quitar filtros</Link> : null}
+        <span className="adm-summary-links">
+          {q || statusFilter !== "all" ? <Link href={buildAdminOrdersHref({ status: "all", q: "", selecting })}>Quitar filtros</Link> : null}
+          {orders.length ? <Link href={buildAdminOrdersHref({ status: statusFilter, q, page, selecting: !selecting })}>{selecting ? "Listo" : "Seleccionar"}</Link> : null}
+        </span>
       </div>
+
+      {selecting && orders.length ? (
+        <form id={BULK_FORM_ID} action={deleteOrdersAction} className="adm-bulk">
+          <input type="hidden" name="returnTo" value={buildAdminOrdersHref({ status: statusFilter, q, selecting: true })} />
+          <input type="hidden" name="confirmDelete" value="1" />
+          <SelectAllOrders formId={BULK_FORM_ID} />
+          <details className="adm-cancel">
+            <summary className="adm-btn adm-btn--danger"><span className="adm-cancel-open">Eliminar seleccionados</span><span className="adm-cancel-close">No eliminar</span></summary>
+            <span>Se borrarán para siempre, con sus piezas. El inventario no se devuelve.</span>
+            <button type="submit" className="adm-btn adm-btn--confirm">Sí, eliminar</button>
+          </details>
+        </form>
+      ) : null}
 
       <div className="adm-layout">
         <section aria-label="Lista de pedidos">
           {orders.length === 0 ? <p className="adm-empty">No hay pedidos con ese filtro.</p> : orders.map((order) => {
             const selected = selectedOrder?.id === order.id;
             return (
-              <article key={order.id} className="adm-order" aria-current={selected ? "true" : undefined}>
+              <article key={order.id} className={`adm-order${selecting ? " adm-order--selecting" : ""}`} aria-current={selected ? "true" : undefined}>
+                {selecting ? (
+                  <label className="adm-check">
+                    <input type="checkbox" name="orderIds" value={order.id} form={BULK_FORM_ID} />
+                    <span className="sr-only">Seleccionar {order.orderCode}</span>
+                  </label>
+                ) : null}
                 <Link href={detailHref(order.orderCode)} className="adm-order-link">
                   <span className="adm-order-code">{order.orderCode}</span>
                   <AccountOrderStatusBadge status={order.status} />
@@ -203,11 +236,13 @@ export default function AdminOrdersView({ adminEmail, orders, total, page, pageS
                   <p>{order.phone} · {order.city}, {order.province}</p>
                   <p>{formatAccountOrderDateTime(order.createdAt)} · {formatPieces(order.itemCount)} · {formatDOP(order.subtotalAmount)}</p>
                 </Link>
-                <div className="adm-actions">
-                  <StatusActions order={order} returnTo={selected ? selectedReturnTo : listHref} />
-                  <WhatsAppButton order={order} />
-                </div>
-                {order.status === "confirmed" && !order.inventoryAdjustedAt ? <InventoryNote order={order} /> : null}
+                {selecting ? null : (
+                  <div className="adm-actions">
+                    <StatusActions order={order} returnTo={selected ? selectedReturnTo : listHref} />
+                    <WhatsAppButton order={order} />
+                  </div>
+                )}
+                {!selecting && order.status === "confirmed" && !order.inventoryAdjustedAt ? <InventoryNote order={order} /> : null}
               </article>
             );
           })}
@@ -215,8 +250,8 @@ export default function AdminOrdersView({ adminEmail, orders, total, page, pageS
             <nav className="acct-pager" aria-label="Páginas de pedidos">
               <span>Página {page} · {Math.min(total, page * pageSize)} de {total}</span>
               <div>
-                {hasPreviousPage ? <Link href={buildAdminOrdersHref({ status: statusFilter, q, page: page - 1 })}><ChevronLeft size={15} aria-hidden="true" />Anterior</Link> : null}
-                {hasNextPage ? <Link href={buildAdminOrdersHref({ status: statusFilter, q, page: page + 1 })}>Siguiente<ChevronRight size={15} aria-hidden="true" /></Link> : null}
+                {hasPreviousPage ? <Link href={buildAdminOrdersHref({ status: statusFilter, q, page: page - 1, selecting })}><ChevronLeft size={15} aria-hidden="true" />Anterior</Link> : null}
+                {hasNextPage ? <Link href={buildAdminOrdersHref({ status: statusFilter, q, page: page + 1, selecting })}>Siguiente<ChevronRight size={15} aria-hidden="true" /></Link> : null}
               </div>
             </nav>
           ) : null}

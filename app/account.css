@@ -124,6 +124,28 @@ a.acct-order:hover .acct-order-code { text-decoration:underline; text-underline-
 .adm-detail-placeholder { padding:24px; background:var(--paper); font-size:13px; line-height:1.8; color:var(--ink-soft); }
 .adm-detail-placeholder strong { display:block; margin-bottom:6px; font-family:var(--font-playfair),serif; font-size:26px; font-weight:500; color:var(--ink); }
 
+.adm-stats { margin:6px 0 44px; padding:32px clamp(20px,4vw,44px) 26px; background:var(--paper); }
+.adm-stats-head { display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:16px; }
+.adm-stats-head h2 { margin-top:6px; font-family:var(--font-playfair),serif; font-size:30px; font-weight:500; line-height:1.1; }
+.adm-stats-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:32px; margin-top:26px; padding-top:26px; border-top:1px solid var(--line-strong); }
+.adm-stats-grid dt { font-size:10px; font-weight:500; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-soft); }
+.adm-stats-grid dd { margin-top:10px; font-family:var(--font-playfair),serif; font-size:clamp(30px,3vw,40px); font-variant-numeric:lining-nums tabular-nums; line-height:1; }
+.adm-stats-grid p { margin-top:8px; font-size:12px; color:var(--ink-soft); }
+.adm-months { margin-top:22px; }
+.adm-months summary { display:inline-flex; align-items:center; min-height:44px; cursor:pointer; list-style:none; font-size:12px; text-decoration:underline; text-underline-offset:4px; }
+.adm-months summary::-webkit-details-marker { display:none; }
+.adm-months li { display:grid; grid-template-columns:9.5rem minmax(0,1fr) 8rem 6.5rem; align-items:center; gap:16px; padding:11px 0; border-bottom:1px solid var(--line); font-size:13px; font-variant-numeric:tabular-nums; }
+.adm-months li > span:nth-child(3) { text-align:right; }
+.adm-months-count { font-size:12px; color:var(--ink-soft); text-align:right; }
+.adm-bar { display:block; height:6px; background:rgba(44,42,39,.07); }
+.adm-bar span { display:block; height:100%; background:var(--brand-sage); }
+.adm-summary-links { display:flex; gap:20px; }
+.adm-bulk { position:sticky; top:var(--shop-header-height); z-index:5; display:flex; flex-wrap:wrap; align-items:center; gap:10px; padding:12px 0; border-bottom:1px solid var(--line); background:#fff; }
+.adm-bulk .adm-cancel[open] span { font-size:12px; color:var(--ink-soft); }
+.adm-order--selecting { display:grid; grid-template-columns:40px minmax(0,1fr); align-items:start; }
+.adm-check { display:flex; min-height:44px; padding-top:1px; cursor:pointer; }
+.adm-check input { width:20px; height:20px; accent-color:var(--ink); }
+
 @media (max-width:1023px) {
   .acct-grid, .acct-detail-grid { grid-template-columns:minmax(0,1fr); gap:44px; }
   .adm-layout { grid-template-columns:minmax(0,1fr); gap:28px; }
@@ -138,6 +160,11 @@ a.acct-order:hover .acct-order-code { text-decoration:underline; text-underline-
   .acct-section-head h2 { font-size:26px; }
   .adm-detail { margin-inline:-16px; padding:20px 16px; }
   .adm-order[aria-current] { margin-inline:-16px; padding-inline:16px; }
+  .adm-stats { margin-inline:-16px; padding:26px 16px 20px; }
+  .adm-stats-grid { grid-template-columns:minmax(0,1fr); gap:22px; }
+  .adm-months li { grid-template-columns:minmax(0,1fr) auto; gap:6px 12px; }
+  .adm-months li .adm-bar { grid-column:1 / -1; grid-row:2; }
+  .adm-months-count { display:none; }
 }
 @media (max-width:379px) {
   .acct-form { grid-template-columns:1fr; }

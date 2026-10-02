@@ -24,6 +24,7 @@ interface D1PreparedStatementLike {
 
 interface OrdersD1DatabaseLike {
   prepare: (sql: string) => D1PreparedStatementLike;
+  batch: (statements: D1PreparedStatementBoundLike[]) => Promise<unknown[]>;
 }
 
 type OrderRow = {
@@ -446,4 +447,133 @@ export async function markOrderInventoryAdjustment(params: {
       params.orderId,
     )
     .run();
+}
+
+// Permanent removal, triggered by an admin from the panel. Lines go first in the same D1 transaction,
+// so nothing is left behind even if foreign-key cascades are off. Stock is not restored.
+export async function deleteOrders(orderIds: number[]) {
+  const db = await getOrdersDb();
+  if (!db) throw new Error("D1 no disponible");
+  const ids = [...new Set(orderIds)].filter((id) => Number.isSafeInteger(id) && id > 0).slice(0, 100);
+  if (!ids.length) return 0;
+  const placeholders = ids.map(() => "?").join(", ");
+  await db.batch([
+    db.prepare(`DELETE FROM order_items WHERE order_id IN (${placeholders})`).bind(...ids),
+    db.prepare(`DELETE FROM orders WHERE id IN (${placeholders})`).bind(...ids),
+  ]);
+  return ids.length;
+}
+
+// Confirmed onwards counts as sold; pending is shown apart and cancelled is left out.
+const SOLD_STATUSES = "'confirmed', 'in_preparation', 'shipped', 'delivered'";
+// Dominican Republic is UTC-4 all year; months follow local time, not the UTC timestamps stored by D1.
+const LOCAL_MONTH = "strftime('%Y-%m', created_at, '-4 hours')";
+
+export interface AdminMonthSummary {
+  month: string;
+  soldOrders: number;
+  soldAmount: number;
+  pendingOrders: number;
+  pendingAmount: number;
+}
+
+type MonthSummaryRow = {
+  month: string;
+  sold_orders: number | null;
+  sold_amount: number | null;
+  pending_orders: number | null;
+  pending_amount: number | null;
+};
+
+// Local "YYYY-MM" keys for the current month and the ones before it, newest first.
+export function recentLocalMonths(months: number, now = new Date()) {
+  const local = new Date(now.getTime() - 4 * 60 * 60 * 1000);
+  return Array.from({ length: months }, (_, index) => {
+    const date = new Date(Date.UTC(local.getUTCFullYear(), local.getUTCMonth() - index, 1));
+    return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
+  });
+}
+
+// One grouped query over the last year; every month is returned, newest first, even without orders.
+export async function getAdminMonthlySummary(months = 12, now = new Date()): Promise<AdminMonthSummary[]> {
+  const keys = recentLocalMonths(months, now);
+  const db = await getOrdersDb();
+  const rows = db
+    ? (await db
+        .prepare(
+          `SELECT
+            ${LOCAL_MONTH} AS month,
+            SUM(CASE WHEN status IN (${SOLD_STATUSES}) THEN 1 ELSE 0 END) AS sold_orders,
+            SUM(CASE WHEN status IN (${SOLD_STATUSES}) THEN subtotal_amount ELSE 0 END) AS sold_amount,
+            SUM(CASE WHEN status = 'pending_confirmation' THEN 1 ELSE 0 END) AS pending_orders,
+            SUM(CASE WHEN status = 'pending_confirmation' THEN subtotal_amount ELSE 0 END) AS pending_amount
+          FROM orders
+          WHERE ${LOCAL_MONTH} >= ?
+          GROUP BY month`,
+        )
+        .bind(keys[keys.length - 1])
+        .all<MonthSummaryRow>()).results ?? []
+    : [];
+  const byMonth = new Map(rows.map((row) => [row.month, row]));
+  return keys.map((month) => {
+    const row = byMonth.get(month);
+    return {
+      month,
+      soldOrders: Number(row?.sold_orders ?? 0),
+      soldAmount: Number(row?.sold_amount ?? 0),
+      pendingOrders: Number(row?.pending_orders ?? 0),
+      pendingAmount: Number(row?.pending_amount ?? 0),
+    };
+  });
+}
+
+export interface AdminExportLine {
+  orderCode: string;
+  productName: string;
+  productCategory: string | null;
+  quantity: number;
+  unitPrice: number;
+  lineTotal: number;
+}
+
+// Export reads everything once (orders + lines); it runs only when an admin asks for the file.
+export async function listOrdersForExport(): Promise<{ orders: AdminOrderDetail[]; lines: AdminExportLine[] }> {
+  const db = await getOrdersDb();
+  if (!db) return { orders: [], lines: [] };
+  const [orders, lines] = await Promise.all([
+    db
+      .prepare(
+        `SELECT
+          id, order_code, source, customer_mode, clerk_user_id, full_name, email, phone,
+          province, city, sector, address_line1, address_line2, reference_text, delivery_notes,
+          subtotal_amount, currency, item_count, status, channel, created_at, updated_at,
+          inventory_adjusted_at, inventory_adjustment_error
+        FROM orders
+        ORDER BY created_at DESC
+        LIMIT 5000`,
+      )
+      .bind()
+      .all<OrderRow>(),
+    db
+      .prepare(
+        `SELECT o.order_code, i.product_name, i.product_category, i.quantity, i.unit_price, i.line_total
+        FROM order_items i
+        JOIN orders o ON o.id = i.order_id
+        ORDER BY o.created_at DESC, i.id ASC
+        LIMIT 20000`,
+      )
+      .bind()
+      .all<{ order_code: string; product_name: string; product_category: string | null; quantity: number; unit_price: number; line_total: number }>(),
+  ]);
+  return {
+    orders: (orders.results ?? []).map((row) => mapOrderDetail(row, [])),
+    lines: (lines.results ?? []).map((row) => ({
+      orderCode: row.order_code,
+      productName: row.product_name,
+      productCategory: row.product_category,
+      quantity: Number(row.quantity),
+      unitPrice: Number(row.unit_price),
+      lineTotal: Number(row.line_total),
+    })),
+  };
 }

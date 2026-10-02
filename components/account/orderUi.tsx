@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 
 import { WHATSAPP_OWNER_NUMBER } from "../../lib/contact";
+import { STORE_TIME_ZONE, parseStoredDate } from "../../lib/orders/dates";
 import {
   ORDER_STATUS_LABELS,
   type AdminOrderDetail,
@@ -38,11 +39,12 @@ const STATUS_BADGE_LABELS: Record<OrderStatus, string> = {
 };
 
 export function formatAccountOrderDateTime(value: string) {
-  const date = new Date(value);
+  const date = parseStoredDate(value);
   if (Number.isNaN(date.getTime())) return value;
   return new Intl.DateTimeFormat("es-DO", {
     dateStyle: "medium",
     timeStyle: "short",
+    timeZone: STORE_TIME_ZONE,
   }).format(date);
 }
 
