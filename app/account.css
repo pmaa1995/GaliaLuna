@@ -48,7 +48,7 @@ a.acct-order:hover .acct-order-code { text-decoration:underline; text-underline-
 .acct-form { display:grid; grid-template-columns:1fr 1fr; gap:16px 12px; padding-top:18px; }
 .acct-field { display:grid; align-content:start; gap:6px; min-width:0; font-size:10px; font-weight:500; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-soft); }
 .acct-field--wide { grid-column:1 / -1; }
-.acct-field input, .acct-field textarea { width:100%; min-height:46px; padding:11px 12px; border:1px solid var(--line-strong); background:#fff; color:var(--ink); font-size:16px; font-weight:400; letter-spacing:normal; text-transform:none; }
+.acct-field input, .acct-field textarea, .acct-field select { width:100%; min-height:46px; padding:11px 12px; border:1px solid var(--line-strong); background:#fff; color:var(--ink); font-size:16px; font-weight:400; letter-spacing:normal; text-transform:none; }
 .acct-field textarea { resize:vertical; }
 .acct-field input:focus, .acct-field textarea:focus { border-color:var(--ink); }
 .acct-form .shop-button { grid-column:1 / -1; width:100%; }

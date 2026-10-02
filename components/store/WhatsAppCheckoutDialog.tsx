@@ -1,6 +1,6 @@
 "use client";
 
-import { MessageCircle, PackageCheck, UserRound, X } from "lucide-react";
+import { ChevronLeft, MessageCircle, X } from "lucide-react";
 import {
   useEffect,
   useMemo,
@@ -13,7 +13,9 @@ import {
 import type { CartItem } from "../../store/cartStore";
 import { loadSignedInClerk } from "../../lib/clerkBrowser";
 import useModalAccessibility from "./useModalAccessibility";
-import { WHATSAPP_OWNER_NUMBER, WHATSAPP_PHONE_DISPLAY } from "../../lib/contact";
+import { WHATSAPP_OWNER_NUMBER } from "../../lib/contact";
+import { DR_PROVINCES, matchProvince } from "../../lib/orders/provinces";
+import { hasEnoughLetters, isValidCheckoutPhone } from "../../lib/orders/validation";
 import type {
   CheckoutSource,
   CreateWhatsAppOrderResponse,
@@ -76,7 +78,7 @@ function readGuestDraft(): CheckoutFormValues {
       fullName: textValue(parsed.fullName),
       email: textValue(parsed.email),
       phone: textValue(parsed.phone),
-      province: textValue(parsed.province),
+      province: matchProvince(textValue(parsed.province)),
       city: textValue(parsed.city),
       sector: textValue(parsed.sector),
       addressLine1: textValue(parsed.addressLine1),
@@ -126,7 +128,7 @@ function readAccountPrefill(user: ClerkLikeUser | null) {
     fullName: name,
     email: primaryEmail,
     phone: textValue(profile.deliveryPhone),
-    province: textValue(profile.province),
+    province: matchProvince(textValue(profile.province)),
     city: textValue(profile.city),
     sector: textValue(profile.sector),
     addressLine1: textValue(profile.addressLine1),
@@ -151,6 +153,24 @@ function normalizeForm(values: CheckoutFormValues): CheckoutFormValues {
   };
 }
 
+// Same rules as the server, checked first so the shopper gets a clear message without a round trip.
+function validateForm(values: CheckoutFormValues): { message: string; inDetails?: boolean } | null {
+  const missing = [
+    ["nombre", values.fullName],
+    ["teléfono", values.phone],
+    ["provincia", values.province],
+    ["ciudad o municipio", values.city],
+    ["dirección", values.addressLine1],
+  ].filter(([, value]) => !value).map(([label]) => label);
+  if (missing.length) return { message: `Completa ${missing.join(", ")}.` };
+  if (!hasEnoughLetters(values.fullName, 3)) return { message: "Escribe tu nombre y apellido." };
+  if (!isValidCheckoutPhone(values.phone)) return { message: "Escribe un teléfono válido, por ejemplo 809-555-1234." };
+  if (!hasEnoughLetters(values.city, 2)) return { message: "Escribe tu ciudad o municipio." };
+  if (values.addressLine1.length < 5) return { message: "Escribe la dirección completa: calle y número." };
+  if (values.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) return { message: "Revisa el correo.", inDetails: true };
+  return null;
+}
+
 function buildOrderMessage({
   items,
   values,
@@ -172,9 +192,7 @@ function buildOrderMessage({
 
   const lines = [
     "Hola Galia Luna, quiero confirmar este pedido de la web.",
-    ...(orderCode
-      ? [`Codigo de pedido web: ${orderCode}`, "Estado inicial: Pendiente de confirmacion"]
-      : []),
+    ...(orderCode ? [`Código de pedido: ${orderCode}`] : []),
     "",
     "Productos:",
     ...itemLines,
@@ -182,29 +200,22 @@ function buildOrderMessage({
     "",
     "Datos de entrega:",
     `Nombre: ${normalized.fullName}`,
-    `Telefono: ${normalized.phone}`,
-    `Correo: ${normalized.email || "No indicado"}`,
+    `Teléfono: ${normalized.phone}`,
     `Provincia: ${normalized.province}`,
-    `Ciudad/Municipio: ${normalized.city}`,
-    `Sector: ${normalized.sector || "No indicado"}`,
-    `Direccion principal: ${normalized.addressLine1}`,
+    `Ciudad o municipio: ${normalized.city}`,
+    `Dirección: ${normalized.addressLine1}`,
   ];
 
-  if (normalized.addressLine2) {
-    lines.push(`Direccion (linea 2): ${normalized.addressLine2}`);
-  }
-  if (normalized.reference) {
-    lines.push(`Referencia: ${normalized.reference}`);
-  }
-  if (normalized.deliveryNotes) {
-    lines.push(`Instrucciones: ${normalized.deliveryNotes}`);
-  }
+  if (normalized.sector) lines.push(`Sector: ${normalized.sector}`);
+  if (normalized.addressLine2) lines.push(`Apto., edificio o casa: ${normalized.addressLine2}`);
+  if (normalized.reference) lines.push(`Referencia: ${normalized.reference}`);
+  if (normalized.deliveryNotes) lines.push(`Instrucciones: ${normalized.deliveryNotes}`);
+  if (normalized.email) lines.push(`Correo: ${normalized.email}`);
 
   lines.push(
     "",
-    `Origen: ${source === "cart" ? "Pedido desde carrito web" : "Compra directa de pieza"}`,
-    `Cuenta web: ${signedIn ? "Si" : "No (invitado)"}`,
-    "Por favor confirmame disponibilidad, forma de pago y entrega.",
+    `Origen: ${source === "cart" ? "carrito de la web" : "compra directa de una pieza"}${signedIn ? " · con cuenta" : ""}`,
+    "Por favor confírmame disponibilidad, forma de pago y entrega.",
   );
 
   return lines.join("\n");
@@ -214,10 +225,12 @@ export async function saveOrderBeforeWhatsApp({
   items,
   values,
   source,
+  website = "",
 }: {
   items: CartItem[];
   values: CheckoutFormValues;
   source: CheckoutSource;
+  website?: string;
 }): Promise<CreateWhatsAppOrderResponse | null> {
   try {
     const response = await fetch("/api/orders/whatsapp", {
@@ -228,6 +241,7 @@ export async function saveOrderBeforeWhatsApp({
       },
       body: JSON.stringify({
         source,
+        website,
         items: items.map((item) => ({
           id: item.id,
           name: item.name,
@@ -251,14 +265,6 @@ export async function saveOrderBeforeWhatsApp({
     console.error("No se pudo registrar el pedido antes de WhatsApp", error);
     return null;
   }
-}
-
-function fieldClassName() {
-  return "mt-2 h-11 w-full rounded-[12px] border border-[color:var(--line)] bg-[color:var(--paper)] px-3 text-sm text-[color:var(--ink)] outline-none transition placeholder:text-[color:var(--ink-soft)] focus:border-[color:var(--brand-sage)]";
-}
-
-function textareaClassName() {
-  return "mt-2 w-full rounded-[12px] border border-[color:var(--line)] bg-[color:var(--paper)] px-3 py-2.5 text-sm text-[color:var(--ink)] outline-none transition placeholder:text-[color:var(--ink-soft)] focus:border-[color:var(--brand-sage)]";
 }
 
 function openWhatsAppBridgeTab() {
@@ -285,6 +291,7 @@ function buildWhatsAppBridgeUrl(targetUrl: string) {
   bridgeUrl.searchParams.set("to", targetUrl);
   return bridgeUrl.toString();
 }
+
 interface WhatsAppCheckoutDialogProps {
   open: boolean;
   onClose: () => void;
@@ -299,6 +306,8 @@ export interface WhatsAppCheckoutSubmitResult {
   orderCode: string | null;
   signedIn: boolean;
   source: CheckoutSource;
+  // Lets the confirmation reopen WhatsApp if the shopper closed it before sending.
+  whatsappUrl: string | null;
 }
 
 export default function WhatsAppCheckoutDialog({
@@ -309,8 +318,10 @@ export default function WhatsAppCheckoutDialog({
   onSubmitted,
 }: WhatsAppCheckoutDialogProps) {
   const [formValues, setFormValues] = useState<CheckoutFormValues>(emptyForm);
+  const [website, setWebsite] = useState("");
   const [error, setError] = useState("");
   const [signedIn, setSignedIn] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submittingRef = useRef(false);
   const editedRef = useRef(false);
@@ -321,13 +332,16 @@ export default function WhatsAppCheckoutDialog({
     () => items.reduce((sum, item) => sum + item.price * item.quantity, 0),
     [items],
   );
+  const pieces = items.reduce((sum, item) => sum + item.quantity, 0);
 
   useEffect(() => {
     if (!open) return;
 
     let cancelled = false;
     editedRef.current = false;
-    setFormValues(readGuestDraft());
+    const draft = readGuestDraft();
+    setFormValues(draft);
+    setShowDetails(Boolean(draft.sector || draft.addressLine2 || draft.deliveryNotes));
     setSignedIn(false);
     setError("");
     // Resolves immediately for guests; signed-in shoppers get their saved delivery data.
@@ -344,7 +358,7 @@ export default function WhatsAppCheckoutDialog({
   const updateField =
     (key: keyof CheckoutFormValues) =>
     (
-      event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+      event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
     ) => {
       const value = event.target.value;
       editedRef.current = true;
@@ -356,22 +370,16 @@ export default function WhatsAppCheckoutDialog({
     if (submittingRef.current) return;
     setError("");
 
-    const normalized = normalizeForm(formValues);
-    const missingRequired = [
-      ["nombre", normalized.fullName],
-      ["telefono", normalized.phone],
-      ["provincia", normalized.province],
-      ["ciudad/municipio", normalized.city],
-      ["direccion principal", normalized.addressLine1],
-    ].find(([, value]) => !value);
-
     if (items.length === 0) {
       setError("No hay productos en el pedido.");
       return;
     }
 
-    if (missingRequired) {
-      setError(`Completa ${missingRequired[0]} para continuar.`);
+    const normalized = normalizeForm(formValues);
+    const problem = validateForm(normalized);
+    if (problem) {
+      if (problem.inDetails) setShowDetails(true);
+      setError(problem.message);
       return;
     }
 
@@ -391,6 +399,7 @@ export default function WhatsAppCheckoutDialog({
       items,
       values: normalized,
       source,
+      website,
     });
 
     if (!saveResult?.ok || !saveResult.persisted || !saveResult.orderCode) {
@@ -406,20 +415,19 @@ export default function WhatsAppCheckoutDialog({
       values: normalized,
       source,
       signedIn,
-      orderCode: saveResult?.orderCode,
+      orderCode: saveResult.orderCode,
     });
 
     const url = `https://api.whatsapp.com/send?phone=${WHATSAPP_OWNER_NUMBER}&text=${encodeURIComponent(message)}`;
 
-    const submitResult: WhatsAppCheckoutSubmitResult = {
-      ok: Boolean(saveResult?.ok),
-      persisted: Boolean(saveResult?.persisted),
-      orderCode: saveResult?.orderCode ?? null,
+    onSubmitted?.({
+      ok: true,
+      persisted: true,
+      orderCode: saveResult.orderCode,
       signedIn,
       source,
-    };
-
-    onSubmitted?.(submitResult);
+      whatsappUrl: url,
+    });
 
     if (whatsappTab) {
       try {
@@ -437,281 +445,120 @@ export default function WhatsAppCheckoutDialog({
   };
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-start justify-center bg-[color:var(--ink)]/28 px-3 py-4 backdrop-blur-[2px] sm:px-6 sm:py-8">
+    <div className="sheet-overlay" onClick={(event) => { if (event.target === event.currentTarget && !isSubmitting) onClose(); }}>
       <div
         ref={dialogRef}
         tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-label="Confirmar pedido por WhatsApp"
-        className="relative flex max-h-[calc(100vh-2rem)] w-full max-w-[1080px] flex-col overflow-hidden border border-[color:var(--line-strong)] bg-[color:var(--panel)] shadow-[0_28px_70px_rgba(43,42,40,0.18)] sm:max-h-[calc(100vh-4rem)]"
+        className="sheet sheet--animated"
       >
-        <div className="pointer-events-none absolute right-0 top-0 h-40 w-40 rounded-full bg-[color:var(--brand-coral)]/18 blur-3xl" />
-        <div className="pointer-events-none absolute bottom-0 left-0 h-44 w-44 rounded-full bg-[color:var(--brand-sage)]/16 blur-3xl" />
-
-        <header className="relative z-10 flex items-start justify-between gap-3 border-b border-[color:var(--line)] bg-[color:var(--paper)]/85 px-4 py-4 sm:px-5">
-          <div>
-            <p className="text-[10px] uppercase tracking-[0.18em] text-[color:var(--ink-soft)]">
-              Confirmar pedido
-            </p>
-            <h2 className="mt-1 [font-family:var(--font-playfair)] text-[1.65rem] leading-[0.95] tracking-[-0.02em] text-[color:var(--ink)] sm:text-[1.9rem]">
-              WhatsApp con datos completos
-            </h2>
-            <p className="mt-1 text-xs text-[color:var(--ink-soft)]">
-              {signedIn
-                ? "Revisa tus datos de entrega y envia el pedido sin repetir informacion."
-                : "Completa tus datos una vez para enviar el pedido sin tantas preguntas por chat."}
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={isSubmitting}
-            aria-label="Cerrar confirmacion de pedido"
-            className="inline-flex h-9 w-9 items-center justify-center border border-[color:var(--line)] bg-[color:var(--paper)] text-[color:var(--ink)] transition hover:bg-[color:var(--bg-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--focus-ring)]"
-          >
-            <X className="h-4 w-4" />
+        <header className="sheet-head">
+          <button type="button" className="sheet-back" onClick={onClose} disabled={isSubmitting}>
+            <ChevronLeft size={16} aria-hidden="true" />
+            {source === "cart" ? "Volver al pedido" : "Volver"}
+          </button>
+          <button type="button" className="sheet-close" onClick={onClose} disabled={isSubmitting} aria-label="Cerrar confirmación de pedido">
+            <X size={20} />
           </button>
         </header>
 
-        <div className="relative z-10 grid min-h-0 flex-1 gap-0 overflow-hidden lg:grid-cols-[minmax(0,1.02fr)_minmax(0,0.98fr)]">
-          <section className="min-h-0 overflow-y-auto border-b border-[color:var(--line)] bg-[color:var(--paper)] p-4 sm:p-5 lg:border-b-0 lg:border-r">
-            <div className="grid gap-4">
-              <div className="rounded-[16px] border border-[color:var(--line)] bg-[color:var(--bg-soft)] p-4">
-                <div className="flex items-center gap-2 text-[color:var(--ink)]">
-                  <PackageCheck className="h-4 w-4" />
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em]">
-                    Resumen del pedido
-                  </p>
-                </div>
+        <form onSubmit={handleSubmit} className="sheet-form" noValidate>
+          <div className="sheet-body">
+            <h2 className="sheet-title">Datos de entrega</h2>
+            <p className="sheet-lead">
+              {signedIn ? "Usamos los datos de tu cuenta. Puedes cambiarlos antes de enviar." : "Solo lo necesario para preparar tu entrega."}
+            </p>
 
-                <ul className="mt-3 space-y-2">
-                  {items.map((item) => (
-                    <li
-                      key={`${item.id}-${item.quantity}`}
-                      className="flex items-start justify-between gap-3 text-sm"
-                    >
-                      <div>
-                        <p className="font-medium text-[color:var(--ink)]">
-                          {item.quantity}x {item.name}
-                        </p>
-                        <p className="text-xs text-[color:var(--ink-soft)]">
-                          {item.category}
-                        </p>
-                      </div>
-                      <p className="shrink-0 text-[color:var(--ink)]">
-                        {formatDOP(item.price * item.quantity)}
-                      </p>
-                    </li>
-                  ))}
-                </ul>
+            <details className="sheet-summary">
+              <summary>
+                <span>{pieces} {pieces === 1 ? "pieza" : "piezas"} · {formatDOP(total)}</span>
+                <span className="sheet-summary-toggle">Ver piezas</span>
+              </summary>
+              <ul>
+                {items.map((item) => (
+                  <li key={`${item.id}-${item.quantity}`}>
+                    <span>{item.quantity} × {item.name}</span>
+                    <span>{formatDOP(item.price * item.quantity)}</span>
+                  </li>
+                ))}
+              </ul>
+            </details>
 
-                <div className="mt-4 border-t border-[color:var(--line)] pt-3">
-                  <div className="flex items-center justify-between text-sm font-semibold text-[color:var(--ink)]">
-                    <span>Total estimado</span>
-                    <span>{formatDOP(total)}</span>
-                  </div>
-                  <p className="mt-1 text-xs leading-6 text-[color:var(--ink-soft)]">
-                    El pago y la confirmacion final se coordinan por WhatsApp con una asesora.
-                  </p>
-                </div>
+            <fieldset className="sheet-group">
+              <legend>Contacto</legend>
+              <label className="sheet-field">
+                Nombre y apellido
+                <input data-modal-initial-focus maxLength={140} value={formValues.fullName} onChange={updateField("fullName")} autoComplete="name" required />
+              </label>
+              <label className="sheet-field">
+                Teléfono (WhatsApp)
+                <input type="tel" inputMode="tel" maxLength={40} value={formValues.phone} onChange={updateField("phone")} placeholder="809-555-1234" autoComplete="tel" required />
+              </label>
+            </fieldset>
+
+            <fieldset className="sheet-group">
+              <legend>Entrega</legend>
+              <div className="sheet-field">
+                <label htmlFor="checkout-province">Provincia</label>
+                <select id="checkout-province" value={formValues.province} onChange={updateField("province")} autoComplete="address-level1" required>
+                  <option value="">Elige tu provincia</option>
+                  {DR_PROVINCES.map((province) => <option key={province} value={province}>{province}</option>)}
+                </select>
               </div>
+              <label className="sheet-field">
+                Ciudad o municipio
+                <input maxLength={100} value={formValues.city} onChange={updateField("city")} autoComplete="address-level2" required />
+              </label>
+              <label className="sheet-field">
+                Dirección
+                <input maxLength={200} value={formValues.addressLine1} onChange={updateField("addressLine1")} placeholder="Calle y número" autoComplete="address-line1" required />
+              </label>
+              <label className="sheet-field">
+                Referencia (opcional)
+                <input maxLength={260} value={formValues.reference} onChange={updateField("reference")} placeholder="Un lugar conocido cerca" />
+              </label>
+            </fieldset>
 
-              <div className="rounded-[16px] border border-[color:var(--line)] bg-[color:var(--paper)] p-4">
-                <div className="flex items-center gap-2 text-[color:var(--ink)]">
-                  <UserRound className="h-4 w-4" />
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em]">
-                    {signedIn ? "Cuenta detectada" : "Compra sin cuenta"}
-                  </p>
-                </div>
-                <p className="mt-2 text-sm leading-7 text-[color:var(--ink-soft)]">
-                  {signedIn
-                    ? "Tomamos tus datos guardados de la cuenta para agilizar la entrega. Puedes editarlos antes de enviar."
-                    : "Puedes pedir sin cuenta. Guardaremos estos datos en este dispositivo para que no tengas que escribirlos otra vez."}
-                </p>
-                {!signedIn ? (
-                  <div className="mt-3 rounded-[12px] border border-[color:var(--line)] bg-[color:var(--bg-soft)] p-3">
-                    <p className="text-xs leading-6 text-[color:var(--ink-soft)]">
-                      WhatsApp de soporte: {WHATSAPP_PHONE_DISPLAY}
-                    </p>
-                  </div>
-                ) : null}
+            <details className="sheet-more" open={showDetails} onToggle={(event) => setShowDetails(event.currentTarget.open)}>
+              <summary>Añadir más detalles (opcional)</summary>
+              <div className="sheet-group">
+                <label className="sheet-field">
+                  Sector
+                  <input maxLength={140} value={formValues.sector} onChange={updateField("sector")} autoComplete="address-level3" />
+                </label>
+                <label className="sheet-field">
+                  Apto., edificio o casa
+                  <input maxLength={200} value={formValues.addressLine2} onChange={updateField("addressLine2")} autoComplete="address-line2" />
+                </label>
+                <label className="sheet-field">
+                  Correo
+                  <input type="email" maxLength={180} value={formValues.email} onChange={updateField("email")} autoComplete="email" />
+                </label>
+                <label className="sheet-field">
+                  Instrucciones de entrega
+                  <textarea maxLength={360} rows={2} value={formValues.deliveryNotes} onChange={updateField("deliveryNotes")} placeholder="Horario, quién recibe…" />
+                </label>
               </div>
+            </details>
+
+            {/* Honeypot: hidden from people and assistive tech; bots that fill it are rejected by the server. */}
+            <div className="sheet-hp" aria-hidden="true">
+              <label>No completes este campo<input tabIndex={-1} autoComplete="off" value={website} onChange={(event) => setWebsite(event.target.value)} /></label>
             </div>
-          </section>
+          </div>
 
-          <section className="min-h-0 overflow-y-auto bg-[color:var(--paper)] p-4 sm:p-5">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="block text-sm text-[color:var(--ink)] sm:col-span-2">
-                  <span className="text-[11px] uppercase tracking-[0.14em] text-[color:var(--ink-soft)]">
-                    Nombre completo *
-                  </span>
-                  <input
-                    data-modal-initial-focus
-                    maxLength={140}
-                    value={formValues.fullName}
-                    onChange={updateField("fullName")}
-                    className={fieldClassName()}
-                    placeholder="Nombre y apellido"
-                    autoComplete="name"
-                    required
-                  />
-                </label>
-
-                <label className="block text-sm text-[color:var(--ink)]">
-                  <span className="text-[11px] uppercase tracking-[0.14em] text-[color:var(--ink-soft)]">
-                    Telefono *
-                  </span>
-                  <input
-                    type="tel"
-                    maxLength={40}
-                    value={formValues.phone}
-                    onChange={updateField("phone")}
-                    className={fieldClassName()}
-                    placeholder="Ej. 809-000-0000"
-                    autoComplete="tel"
-                    required
-                  />
-                </label>
-
-                <label className="block text-sm text-[color:var(--ink)]">
-                  <span className="text-[11px] uppercase tracking-[0.14em] text-[color:var(--ink-soft)]">
-                    Correo
-                  </span>
-                  <input
-                    type="email"
-                    maxLength={180}
-                    value={formValues.email}
-                    onChange={updateField("email")}
-                    className={fieldClassName()}
-                    placeholder="correo@ejemplo.com"
-                    autoComplete="email"
-                  />
-                </label>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="block text-sm text-[color:var(--ink)]">
-                  <span className="text-[11px] uppercase tracking-[0.14em] text-[color:var(--ink-soft)]">
-                    Provincia *
-                  </span>
-                  <input
-                    value={formValues.province}
-                    onChange={updateField("province")}
-                    className={fieldClassName()}
-                    placeholder="Santo Domingo"
-                    required
-                  />
-                </label>
-
-                <label className="block text-sm text-[color:var(--ink)]">
-                  <span className="text-[11px] uppercase tracking-[0.14em] text-[color:var(--ink-soft)]">
-                    Ciudad / Municipio *
-                  </span>
-                  <input
-                    value={formValues.city}
-                    onChange={updateField("city")}
-                    className={fieldClassName()}
-                    placeholder="Santo Domingo Este"
-                    required
-                  />
-                </label>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="block text-sm text-[color:var(--ink)]">
-                  <span className="text-[11px] uppercase tracking-[0.14em] text-[color:var(--ink-soft)]">
-                    Sector
-                  </span>
-                  <input
-                    value={formValues.sector}
-                    onChange={updateField("sector")}
-                    className={fieldClassName()}
-                    placeholder="Sector / barrio"
-                  />
-                </label>
-
-                <label className="block text-sm text-[color:var(--ink)]">
-                  <span className="text-[11px] uppercase tracking-[0.14em] text-[color:var(--ink-soft)]">
-                    Direccion (linea 2)
-                  </span>
-                  <input
-                    value={formValues.addressLine2}
-                    onChange={updateField("addressLine2")}
-                    className={fieldClassName()}
-                    placeholder="Apto, edificio, nivel"
-                  />
-                </label>
-              </div>
-
-              <label className="block text-sm text-[color:var(--ink)]">
-                <span className="text-[11px] uppercase tracking-[0.14em] text-[color:var(--ink-soft)]">
-                  Direccion principal *
-                </span>
-                <input
-                  value={formValues.addressLine1}
-                  onChange={updateField("addressLine1")}
-                  className={fieldClassName()}
-                  placeholder="Calle, numero y direccion base"
-                  required
-                />
-              </label>
-
-              <label className="block text-sm text-[color:var(--ink)]">
-                <span className="text-[11px] uppercase tracking-[0.14em] text-[color:var(--ink-soft)]">
-                  Referencia
-                </span>
-                <textarea
-                  value={formValues.reference}
-                  onChange={updateField("reference")}
-                  rows={2}
-                  className={textareaClassName()}
-                  placeholder="Punto de referencia para ubicar la entrega"
-                />
-              </label>
-
-              <label className="block text-sm text-[color:var(--ink)]">
-                <span className="text-[11px] uppercase tracking-[0.14em] text-[color:var(--ink-soft)]">
-                  Instrucciones (opcional)
-                </span>
-                <textarea
-                  value={formValues.deliveryNotes}
-                  onChange={updateField("deliveryNotes")}
-                  rows={2}
-                  className={textareaClassName()}
-                  placeholder="Horario preferido, quien recibe, indicaciones utiles"
-                />
-              </label>
-
-              {error ? (
-                <div role="alert" className="rounded-[12px] border border-[color:var(--brand-coral)]/45 bg-[color:var(--brand-coral)]/12 px-3 py-2 text-sm text-[color:var(--ink)]">
-                  {error}
-                </div>
-              ) : null}
-
-              <div className="flex flex-col gap-2 pt-1 sm:flex-row">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  disabled={isSubmitting}
-                  className="inline-flex items-center justify-center rounded-full border border-[color:var(--line)] bg-[color:var(--paper)] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)] transition hover:bg-[color:var(--bg-soft)]"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="inline-flex items-center justify-center gap-2 rounded-full border border-[color:var(--brand-coral)]/35 bg-[color:var(--brand-coral)] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)] transition hover:brightness-95"
-                >
-                  <MessageCircle className="h-3.5 w-3.5" />
-                  {isSubmitting ? "Preparando pedido..." : "Enviar por WhatsApp"}
-                </button>
-              </div>
-            </form>
-          </section>
-        </div>
+          <footer className="sheet-foot">
+            {error ? <p role="alert" className="sheet-error">{error}</p> : null}
+            <p className="sheet-total"><span>Total estimado</span><strong>{formatDOP(total)}</strong></p>
+            <button type="submit" disabled={isSubmitting} className="sheet-submit">
+              <MessageCircle size={16} aria-hidden="true" />
+              {isSubmitting ? "Preparando tu pedido…" : "Enviar pedido por WhatsApp"}
+            </button>
+            <p className="sheet-note">Se abrirá WhatsApp con tu pedido listo. Envía el mensaje y una asesora te confirma disponibilidad, pago y entrega.</p>
+          </footer>
+        </form>
       </div>
     </div>
   );

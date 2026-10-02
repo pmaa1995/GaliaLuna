@@ -26,6 +26,21 @@ export function isValidProductId(value: unknown): value is string {
     !value.startsWith("drafts.") && !value.startsWith("versions.");
 }
 
+// Dominican numbers: 10 digits with a 809/829/849 area code, optionally prefixed by 1.
+// Numbers abroad must be written with "+" and the country code.
+export function isValidCheckoutPhone(value: string) {
+  const text = value.trim();
+  if (!/^[+\d\s().-]+$/.test(text)) return false;
+  const digits = text.replace(/\D/g, "");
+  if (/^1?8[024]9\d{7}$/.test(digits)) return true;
+  return text.startsWith("+") && digits.length >= 8 && digits.length <= 15;
+}
+
+// Rejects keyboard noise such as "Dd" while allowing short real names.
+export function hasEnoughLetters(value: string, minimum: number) {
+  return (value.match(/\p{L}/gu) ?? []).length >= minimum;
+}
+
 function object(value: unknown): Record<string, unknown> | null {
   return value !== null && typeof value === "object" && !Array.isArray(value)
     ? value as Record<string, unknown> : null;
@@ -59,10 +74,16 @@ export function parseCheckoutPayload(value: unknown): CreateWhatsAppOrderPayload
   if (![customer.fullName, customer.phone, customer.province, customer.city, customer.addressLine1].every(Boolean)) {
     throw new CheckoutValidationError("Completa nombre, telefono y direccion de entrega.");
   }
-  if (!/^[+\d\s().-]+$/.test(customer.phone) ||
-      !/^\d{7,15}$/.test(customer.phone.replace(/\D/g, "")) ||
+  if (!isValidCheckoutPhone(customer.phone) ||
       (customer.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customer.email))) {
-    throw new CheckoutValidationError("Revisa el telefono y el correo de contacto.");
+    throw new CheckoutValidationError("Revisa el teléfono y el correo de contacto.");
+  }
+  if (!hasEnoughLetters(customer.fullName, 3) || !hasEnoughLetters(customer.city, 2) || customer.addressLine1.length < 5) {
+    throw new CheckoutValidationError("Revisa tu nombre y la dirección de entrega.");
+  }
+  // Hidden "website" field: people never see it, form-filling bots do.
+  if (typeof data.website === "string" && data.website.trim()) {
+    throw new CheckoutValidationError("No se pudo registrar el pedido.");
   }
 
   const seen = new Set<string>();

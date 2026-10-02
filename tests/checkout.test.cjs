@@ -60,6 +60,28 @@ test("checkout enforces customer length, required and contact fields", () => {
   }
 });
 
+test("checkout rejects junk contact data and honeypot submissions", () => {
+  for (const phone of ["809809809", "1234567", "5555555555", "+12", "809-555-12345"]) {
+    assert.throws(() => validation.parseCheckoutPayload(payload({ customer: { ...customer, phone } })), /tel/i, phone);
+  }
+  for (const phone of ["809-555-1234", "(829) 555 1234", "1 849 555 1234", "+1 809 555 1234", "+34 612 345 678", "+1 305 555 1234"]) {
+    assert.equal(validation.parseCheckoutPayload(payload({ customer: { ...customer, phone } })).customer.phone, phone);
+  }
+  for (const change of [{ fullName: "Dd" }, { city: "x" }, { addressLine1: "C/1" }]) {
+    assert.throws(() => validation.parseCheckoutPayload(payload({ customer: { ...customer, ...change } })), /nombre|direcci/i);
+  }
+  assert.throws(() => validation.parseCheckoutPayload(payload({ website: "https://spam.test" })), /No se pudo/);
+  assert.equal(validation.parseCheckoutPayload(payload({ website: "" })).customer.fullName, customer.fullName);
+});
+
+test("province matching maps earlier free text to the canonical list", () => {
+  const { matchProvince, DR_PROVINCES } = load("lib/orders/provinces.ts");
+  assert.equal(DR_PROVINCES.length, 32);
+  assert.equal(matchProvince(" distrito nacional "), "Distrito Nacional");
+  assert.equal(matchProvince("SAMANA"), "Samaná");
+  assert.equal(matchProvince("Santo doming"), "");
+});
+
 test("current catalog owns product data, price, activity and known stock", () => {
   const parsed = validation.parseCheckoutPayload(payload());
   const verified = validation.validateCheckoutCatalog(parsed, [product]);
@@ -303,6 +325,8 @@ test("client rejects HTTP failure, unpersisted response and malformed JSON befor
       "react/jsx-runtime": {}, "lucide-react": {}, react: {},
       "./useModalAccessibility": {},
       "../../lib/clerkBrowser": {},
+      "../../lib/orders/provinces": load("lib/orders/provinces.ts"),
+      "../../lib/orders/validation": validation,
       "../../lib/contact": {},
       "../../types/product": load("types/product.ts"),
     }, { fetch });

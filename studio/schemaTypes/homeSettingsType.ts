@@ -2,12 +2,14 @@ import { defineArrayMember, defineField, defineType } from "sanity";
 
 export const homeSettingsType = defineType({
   name: "homeSettings",
-  title: "Portada de la tienda",
+  title: "Portada",
   type: "document",
   fields: [
     defineField({
       name: "heroProducts",
       title: "Productos de respaldo para la portada",
+      // Legacy fallback list; the web only needs the featured piece below.
+      hidden: true,
       description:
         "Selecciona hasta 3 productos. Se usa el primero disponible si no hay una pieza principal seleccionada.",
       type: "array",
@@ -21,7 +23,8 @@ export const homeSettingsType = defineType({
     }),
     defineField({
       name: "featuredProduct",
-      title: "Pieza principal de la portada",
+      title: "Pieza de portada",
+      description: "La pieza que aparece grande al inicio de la web. Si la dejas vacía, se usa la primera de la colección.",
       type: "reference",
       to: [{ type: "product" }],
     }),
@@ -29,8 +32,8 @@ export const homeSettingsType = defineType({
   preview: {
     prepare() {
       return {
-        title: "Configuración de la portada",
-        subtitle: "Pieza principal y productos de respaldo",
+        title: "Portada",
+        subtitle: "Pieza destacada del inicio",
       };
     },
   },

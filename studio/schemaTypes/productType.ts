@@ -20,14 +20,15 @@ export const productType = defineType({
     }),
     defineField({
       name: "slug",
-      title: "Slug",
+      title: "Dirección web",
+      description: "Se crea desde el nombre. Evita cambiarla después de publicar: cambiaría el enlace de la pieza.",
       type: "slug",
       options: { source: "name", maxLength: 96 },
       validation: (rule) => rule.required(),
     }),
     defineField({
       name: "category",
-      title: "Categoria",
+      title: "Categoría",
       type: "string",
       options: {
         list: PRODUCT_CATEGORIES.map((category) => ({
@@ -39,14 +40,15 @@ export const productType = defineType({
     }),
     defineField({
       name: "description",
-      title: "Descripcion",
+      title: "Descripción",
+      description: "Material, piedra y detalles que ayuden a elegir. Aparece en la ficha de la pieza.",
       type: "text",
       rows: 4,
       validation: (rule) => rule.required().min(10),
     }),
     defineField({
       name: "price",
-      title: "Precio",
+      title: "Precio (RD$)",
       type: "number",
       validation: (rule) => rule.required().min(0),
     }),
@@ -54,13 +56,15 @@ export const productType = defineType({
       name: "currency",
       title: "Moneda",
       type: "string",
+      // Only DOP is sold; kept in the data for checkout validation, not shown to editors.
+      hidden: true,
       initialValue: "DOP",
       options: { list: [{ title: "Peso dominicano (DOP)", value: "DOP" }] },
       validation: (rule) => rule.required(),
     }),
     defineField({
       name: "images",
-      title: "Imagenes",
+      title: "Imágenes",
       description: IMAGE_STANDARD_HELP_TEXT,
       type: "array",
       of: [
@@ -86,18 +90,20 @@ export const productType = defineType({
     defineField({
       name: "isActive",
       title: "Mostrar en tienda",
+      description: "Desactívalo para ocultar la pieza sin borrarla.",
       type: "boolean",
       initialValue: true,
     }),
     defineField({
       name: "badge",
-      title: "Etiqueta",
-      description: "Ej.: Nuevo, Best Seller, Edicion limitada",
+      title: "Etiqueta (opcional)",
+      description: "Úsala solo en piezas especiales: si todas la llevan, deja de destacar. Ej.: Nuevo, Edición limitada, Por pedido.",
       type: "string",
     }),
     defineField({
       name: "inventory",
       title: "Inventario disponible",
+      description: "Piezas en existencia. En 0 la pieza aparece como agotada; vacío significa disponibilidad por confirmar.",
       type: "number",
       validation: (rule) => rule.min(0).integer(),
     }),

@@ -3,6 +3,7 @@
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import Link from "next/link";
 import {
+  ArrowRight,
   MessageCircle,
   Minus,
   Plus,
@@ -41,8 +42,8 @@ const CartLineItem = memo(function CartLineItem({
   onDecrease,
 }: CartLineItemProps) {
   return (
-    <li className="grid grid-cols-[4.2rem_minmax(0,1fr)] gap-3 border border-[color:var(--line)] bg-[color:var(--paper)] p-3">
-      <div className="relative h-[5rem] overflow-hidden border border-[color:var(--line)] bg-[color:var(--bg-soft)]">
+    <li className="cart-line">
+      <div className="cart-line-image">
         <ProgressiveImage
           src={item.imageUrl || FALLBACK_PRODUCT_IMAGE.url}
           alt={item.imageAlt || item.name}
@@ -50,64 +51,29 @@ const CartLineItem = memo(function CartLineItem({
           quality={75}
           placeholder="blur"
           blurDataURL={PRODUCT_IMAGE_BLUR_DATA_URL}
-          sizes="68px"
+          sizes="72px"
           className="object-cover"
         />
       </div>
-
-      <div className="min-w-0">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <p className="text-[10px] uppercase tracking-[0.16em] text-[color:var(--ink-soft)]">
-              {item.category}
-            </p>
-            <p className="truncate [font-family:var(--font-playfair)] text-[1.12rem] leading-[0.95] tracking-[-0.02em] text-[color:var(--ink)]">
-              {item.name}
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => onRemove(item.id)}
-            aria-label={`Eliminar ${item.name}`}
-            className="inline-flex h-9 w-9 shrink-0 items-center justify-center border border-transparent text-[color:var(--ink-soft)] transition hover:border-[color:var(--line)] hover:text-[color:var(--ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--focus-ring)]"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
+      <div className="cart-line-info">
+        <div className="cart-line-top">
+          <p className="cart-line-name">{item.name}</p>
+          <button type="button" onClick={() => onRemove(item.id)} aria-label={`Eliminar ${item.name}`} className="cart-icon-button">
+            <Trash2 size={15} aria-hidden="true" />
           </button>
         </div>
-
-        <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
-          <div className="inline-flex items-center border border-[color:var(--line)] bg-[color:var(--bg-soft)]">
-            <button
-              type="button"
-              onClick={() => onDecrease(item.id, item.quantity)}
-              className="inline-flex h-10 w-10 items-center justify-center text-[color:var(--ink)] transition hover:bg-[color:var(--brand-sand)]/75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--focus-ring)]"
-              aria-label={`Reducir ${item.name}`}
-            >
-              <Minus className="h-3.5 w-3.5" />
+        <p className="cart-line-category">{item.category}</p>
+        <div className="cart-line-bottom">
+          <div className="cart-stepper">
+            <button type="button" onClick={() => onDecrease(item.id, item.quantity)} aria-label={`Reducir ${item.name}`}>
+              <Minus size={14} aria-hidden="true" />
             </button>
-            <span className="min-w-8 text-center text-sm tabular-nums text-[color:var(--ink)]">
-              {item.quantity}
-            </span>
-            <button
-              type="button"
-              disabled={item.quantity >= Math.min(99, item.inventory ?? 99)}
-              onClick={() => onIncrease(item.id, item.quantity)}
-              className="inline-flex h-10 w-10 items-center justify-center text-[color:var(--ink)] transition hover:bg-[color:var(--brand-sand)]/75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--focus-ring)]"
-              aria-label={`Aumentar ${item.name}`}
-            >
-              <Plus className="h-3.5 w-3.5" />
+            <span>{item.quantity}</span>
+            <button type="button" disabled={item.quantity >= Math.min(99, item.inventory ?? 99)} onClick={() => onIncrease(item.id, item.quantity)} aria-label={`Aumentar ${item.name}`}>
+              <Plus size={14} aria-hidden="true" />
             </button>
           </div>
-
-          <div className="text-right">
-            <p className="text-[11px] text-[color:var(--ink-soft)]">
-              {formatDOP(item.price)} c/u
-            </p>
-            <p className="text-sm font-medium text-[color:var(--ink)]">
-              {formatDOP(item.price * item.quantity)}
-            </p>
-          </div>
+          <p className="cart-line-price">{formatDOP(item.price * item.quantity)}</p>
         </div>
       </div>
     </li>
@@ -168,7 +134,7 @@ export default function CartDrawer({ floating = true }: { floating?: boolean }) 
         {safeIsOpen ? (
           <motion.div
             key="cart"
-            className="fixed inset-0 z-50 bg-[color:var(--ink)]/25"
+            className="sheet-overlay"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             transition={{ duration: prefersReducedMotion ? 0 : 0.18 }}
             onClick={(event) => { if (event.target === event.currentTarget) closeCart(); }}
@@ -179,85 +145,48 @@ export default function CartDrawer({ floating = true }: { floating?: boolean }) 
             role="dialog"
             aria-modal="true"
             aria-labelledby="cart-title"
-            initial={
-              prefersReducedMotion ? { opacity: 1 } : { opacity: 0, x: 18 }
-            }
-            animate={
-              prefersReducedMotion ? { opacity: 1 } : { opacity: 1, x: 0 }
-            }
-            exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, x: 18 }}
-            transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute bottom-3 right-3 top-3 flex w-[min(420px,calc(100vw-1rem))] flex-col border border-[color:var(--line-strong)] bg-[color:var(--panel)] shadow-[0_24px_70px_rgba(43,42,40,0.16)]"
+            initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, x: 24 }}
+            animate={prefersReducedMotion ? { opacity: 1 } : { opacity: 1, x: 0 }}
+            exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, x: 24 }}
+            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+            className="sheet"
           >
-            <header className="border-b border-[color:var(--line)] px-4 py-4">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-[10px] uppercase tracking-[0.16em] text-[color:var(--ink-soft)]">
-                    Resumen del pedido
-                  </p>
-                  <h2 id="cart-title" className="mt-1 [font-family:var(--font-playfair)] text-[1.7rem] leading-[0.95] tracking-[-0.02em] text-[color:var(--ink)]">
-                    Tu pedido ({totalItems})
-                  </h2>
-                  <p className="mt-1 text-xs text-[color:var(--ink-soft)]">
-                    Envíalo por WhatsApp cuando estés listo.
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={closeCart}
-                  aria-label="Cerrar pedido"
-                  className="inline-flex h-10 w-10 items-center justify-center border border-[color:var(--line)] bg-[color:var(--paper)] text-[color:var(--ink)] transition hover:bg-[color:var(--bg-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--focus-ring)]"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
+            <header className="sheet-head">
+              <h2 id="cart-title" className="sheet-heading">Tu pedido{totalItems ? ` (${totalItems})` : ""}</h2>
+              <button type="button" onClick={closeCart} aria-label="Cerrar pedido" className="sheet-close">
+                <X size={20} />
+              </button>
             </header>
 
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4">
+            <div className="sheet-body">
               {lastOrderSubmission?.ok ? (
-                <div className="mb-4 rounded-[16px] border border-[color:var(--brand-sage)]/35 bg-[color:var(--brand-sage)]/12 p-4">
-                  <p className="text-[10px] uppercase tracking-[0.16em] text-[color:var(--ink-soft)]">
-                    Pedido preparado
-                  </p>
-                  <p className="mt-2 text-sm leading-6 text-[color:var(--ink)] [overflow-wrap:anywhere]">
-                    Tu pedido está preparado. Confirma el envío del mensaje en WhatsApp.
-                    {lastOrderSubmission.persisted && lastOrderSubmission.orderCode
-                      ? ` También quedó registrado en la web con código ${lastOrderSubmission.orderCode}.`
-                      : " Conservamos las piezas en tu pedido para que puedas volver a intentarlo."}
-                  </p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {lastOrderSubmission.persisted && lastOrderSubmission.orderCode && lastOrderSubmission.signedIn ? (
-                      <Link
-                        href={`/mi-cuenta/pedidos/${encodeURIComponent(lastOrderSubmission.orderCode)}`}
-                        onClick={closeCart}
-                        className="inline-flex items-center gap-2 rounded-full border border-[color:var(--line)] bg-[color:var(--paper)] px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)] transition hover:bg-[color:var(--bg-soft)]"
-                      >
-                        Ver pedido en progreso
+                <div className="cart-done" role="status">
+                  <p className="cart-done-title">Pedido {lastOrderSubmission.orderCode} listo</p>
+                  <p>Falta un paso: envía el mensaje en WhatsApp para que una asesora lo confirme.</p>
+                  <div className="cart-done-actions">
+                    {lastOrderSubmission.whatsappUrl ? (
+                      <a href={lastOrderSubmission.whatsappUrl} target="_blank" rel="noopener noreferrer" className="sheet-submit">
+                        <MessageCircle size={16} aria-hidden="true" />Abrir WhatsApp
+                      </a>
+                    ) : null}
+                    {lastOrderSubmission.signedIn && lastOrderSubmission.orderCode ? (
+                      <Link href={`/mi-cuenta/pedidos/${encodeURIComponent(lastOrderSubmission.orderCode)}`} onClick={closeCart} className="cart-link">
+                        Ver pedido en mi cuenta
                       </Link>
                     ) : null}
-                    <button
-                      type="button"
-                      onClick={() => setLastOrderSubmission(null)}
-                      className="inline-flex items-center gap-2 rounded-full border border-transparent px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink-soft)] transition hover:border-[color:var(--line)] hover:bg-[color:var(--paper)]"
-                    >
-                      Cerrar aviso
-                    </button>
                   </div>
                 </div>
               ) : null}
               {safeItems.length === 0 ? (
-                <div className="flex h-full flex-col justify-center border border-[color:var(--line)] bg-[color:var(--paper)] p-5 text-left">
-                  <p className="[font-family:var(--font-playfair)] text-[1.5rem] leading-[0.95] tracking-[-0.02em] text-[color:var(--ink)]">
-                    Tu pedido está vacío
-                  </p>
-                  <p className="mt-2 text-sm leading-7 text-[color:var(--ink-soft)]">
-                    Agrega piezas desde el catálogo y confírmalo por WhatsApp cuando quieras.
-                  </p>
-                  <Link href="/coleccion" onClick={closeCart} className="shop-button shop-button-primary mt-5">Explorar la colección</Link>
-                </div>
+                lastOrderSubmission?.ok ? null : (
+                  <div className="cart-empty">
+                    <p className="sheet-title">Tu pedido está vacío</p>
+                    <p>Añade piezas desde la colección y envíanos tu pedido por WhatsApp cuando quieras.</p>
+                    <Link href="/coleccion" onClick={closeCart} className="shop-button shop-button-primary">Explorar la colección</Link>
+                  </div>
+                )
               ) : (
-                <ul className="space-y-3">
+                <ul className="cart-lines">
                   {safeItems.map((item) => (
                     <CartLineItem
                       key={item.id}
@@ -271,49 +200,16 @@ export default function CartDrawer({ floating = true }: { floating?: boolean }) 
               )}
             </div>
 
-            <footer className="border-t border-[color:var(--line)] bg-[color:var(--paper)] px-4 py-4">
-              <div className="space-y-2 border border-[color:var(--line)] bg-[color:var(--bg-soft)] p-3">
-                <div className="flex items-center justify-between text-sm text-[color:var(--ink-soft)]">
-                  <span>Piezas</span>
-                  <span>{totalItems}</span>
-                </div>
-                <div className="flex items-center justify-between text-sm font-semibold text-[color:var(--ink)]">
-                  <span>Total</span>
-                  <span>{formatDOP(total)}</span>
-                </div>
-              </div>
-
-              <div className="mt-3 grid gap-2">
-                {safeItems.length > 0 ? (
-                  <button
-                    type="button"
-                    onClick={() => setIsCheckoutOpen(true)}
-                    className="inline-flex items-center justify-center gap-2 border border-[color:var(--brand-coral)]/35 bg-[color:var(--brand-coral)] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)] transition hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--brand-coral)]/45"
-                  >
-                    <MessageCircle className="h-3.5 w-3.5" />
-                    Enviar pedido por WhatsApp
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    disabled
-                    className="inline-flex items-center justify-center gap-2 border border-[color:var(--line)] bg-[color:var(--bg-soft)] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink-soft)]"
-                  >
-                    <MessageCircle className="h-3.5 w-3.5" />
-                    Enviar pedido por WhatsApp
-                  </button>
-                )}
-
-                <button
-                  type="button"
-                  onClick={clearCart}
-                  disabled={safeItems.length === 0}
-                  className="inline-flex items-center justify-center border border-[color:var(--line)] bg-[color:var(--paper)] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)] transition hover:bg-[color:var(--bg-soft)] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--focus-ring)]"
-                >
-                  Vaciar pedido
+            {safeItems.length > 0 ? (
+              <footer className="sheet-foot">
+                <p className="sheet-total"><span>Total estimado</span><strong>{formatDOP(total)}</strong></p>
+                <button type="button" onClick={() => setIsCheckoutOpen(true)} className="sheet-submit">
+                  Continuar <ArrowRight size={16} aria-hidden="true" />
                 </button>
-              </div>
-            </footer>
+                <p className="sheet-note">Después indicas tu dirección y envías el pedido por WhatsApp. Sin pagos en la web.</p>
+                <button type="button" onClick={clearCart} className="cart-clear">Vaciar pedido</button>
+              </footer>
+            ) : null}
           </motion.aside>
           </motion.div>
         ) : null}

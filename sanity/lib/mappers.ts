@@ -79,6 +79,15 @@ function normalizeImages(input: unknown, fallbackAlt: string): ProductImage[] {
   return images.length > 0 ? images : [FALLBACK_PRODUCT_IMAGE];
 }
 
+// Editors type badges freely ("Edición Limitada", "Por pedidos "); show them trimmed and in sentence case.
+function normalizeBadge(value: unknown) {
+  if (typeof value !== "string") return undefined;
+  const text = value.trim().replace(/\s+/g, " ");
+  if (!text) return undefined;
+  const lower = text.toLocaleLowerCase("es");
+  return lower.charAt(0).toLocaleUpperCase("es") + lower.slice(1);
+}
+
 export function mapSanityProduct(value: unknown): Product | null {
   if (!value || typeof value !== "object") return null;
   const raw = value as Record<string, unknown>;
@@ -122,7 +131,7 @@ export function mapSanityProduct(value: unknown): Product | null {
     images,
     isActive:
       typeof raw.isActive === "boolean" ? raw.isActive : true,
-    badge: typeof raw.badge === "string" ? raw.badge : undefined,
+    badge: normalizeBadge(raw.badge),
     inventory:
       typeof raw.inventory === "number" && Number.isFinite(raw.inventory)
         ? raw.inventory

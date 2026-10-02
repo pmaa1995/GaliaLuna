@@ -98,22 +98,22 @@ const check = (name, condition) => { assert.ok(condition, name); report.checks.p
     const checkout = page.getByRole('dialog', { name: 'Confirmar pedido por WhatsApp', exact: true });
     await checkout.waitFor();
     check('Lazy direct checkout receives focus', await checkout.evaluate(el => el.contains(document.activeElement)));
-    await checkout.getByLabel('Nombre completo *', { exact: true }).fill('Prueba de interfaz');
-    await checkout.getByLabel('Telefono *', { exact: true }).fill('8090000000');
-    await checkout.getByLabel('Provincia *', { exact: true }).fill('Prueba');
-    await checkout.getByLabel('Ciudad / Municipio *', { exact: true }).fill('Prueba');
-    await checkout.getByLabel('Direccion principal *', { exact: true }).fill('Datos ficticios, no enviar');
-    await checkout.getByRole('button', { name: 'Enviar por WhatsApp', exact: true }).click();
+    await checkout.getByLabel('Nombre y apellido', { exact: true }).fill('Prueba de interfaz');
+    await checkout.getByLabel('Teléfono (WhatsApp)', { exact: true }).fill('8090000000');
+    await checkout.getByLabel('Provincia', { exact: true }).selectOption('Santo Domingo');
+    await checkout.getByLabel('Ciudad o municipio', { exact: true }).fill('Prueba');
+    await checkout.getByLabel('Dirección', { exact: true }).fill('Datos ficticios, no enviar');
+    await checkout.getByRole('button', { name: 'Enviar pedido por WhatsApp', exact: true }).click();
     await checkout.getByRole('alert').waitFor();
     check('Direct checkout sends one selected piece with product source', submitted.source === 'product' && submitted.items.length === 1 && submitted.items[0].quantity === 1 && submitted.items[0].name === name);
     check('Failed direct checkout retains cart and avoids WhatsApp navigation', await page.evaluate(() => JSON.parse(localStorage.getItem('galia-luna-cart-v1')).state.items.length === 1 && window.__pdpTest.redirects.length === 0));
     status = 200;
-    await checkout.getByRole('button', { name: 'Enviar por WhatsApp', exact: true }).click();
+    await checkout.getByRole('button', { name: 'Enviar pedido por WhatsApp', exact: true }).click();
     await checkout.waitFor({ state: 'detached' });
     check('Successful direct checkout prepares one intercepted WhatsApp message', requestCount === 2 && await page.evaluate(() => window.__pdpTest.redirects.length === 1));
     check('Direct checkout leaves the separate cart intact', await page.evaluate(() => JSON.parse(localStorage.getItem('galia-luna-cart-v1')).state.items.length === 1));
     check('Direct checkout restores focus to its opener', await direct.evaluate(el => el === document.activeElement));
-    check('Confirmation shows code and asks to send WhatsApp message', (await page.locator('.pdp__confirmation').textContent()).includes(code) && (await page.locator('.pdp__confirmation').textContent()).includes('Confirma el envío'));
+    check('Confirmation shows code and asks to send WhatsApp message', (await page.locator('.pdp__confirmation').textContent()).includes(code) && (await page.locator('.pdp__confirmation').textContent()).includes('Falta un paso'));
 
     for (const width of [320, 390, 768, 1440]) {
       await page.setViewportSize({ width, height: 1000 });

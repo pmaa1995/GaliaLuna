@@ -4,6 +4,7 @@ import { ArrowRight, ChevronRight, MessageCircle, Pencil, Phone, ShieldCheck } f
 
 import { saveAccountProfileAction } from "../../app/mi-cuenta/actions";
 import { CALL_OWNER_NUMBER, WHATSAPP_OWNER_NUMBER } from "../../lib/contact";
+import { DR_PROVINCES, matchProvince } from "../../lib/orders/provinces";
 import AccountSignOutButton from "../auth/AccountSignOutButton";
 
 export interface DeliveryProfile {
@@ -85,7 +86,13 @@ export default function AccountDashboard({ firstName, lastName, displayName, ema
                 <Field label="Apellido" name="lastName" value={lastName} required autoComplete="family-name" />
                 <Field label="Teléfono" name="deliveryPhone" value={profile.deliveryPhone} required placeholder="809-000-0000" type="tel" inputMode="tel" autoComplete="tel" />
                 <Field label="Teléfono alterno" name="alternatePhone" value={profile.alternatePhone} placeholder="Opcional" type="tel" inputMode="tel" />
-                <Field label="Provincia" name="province" value={profile.province} required placeholder="Santo Domingo" autoComplete="address-level1" />
+                <div className="acct-field">
+                  <label htmlFor="profile-province">Provincia *</label>
+                  <select id="profile-province" name="province" required defaultValue={matchProvince(profile.province)} autoComplete="address-level1">
+                    <option value="">Elige tu provincia</option>
+                    {DR_PROVINCES.map((province) => <option key={province} value={province}>{province}</option>)}
+                  </select>
+                </div>
                 <Field label="Ciudad o municipio" name="city" value={profile.city} required placeholder="Santo Domingo Este" autoComplete="address-level2" />
                 <Field label="Dirección" name="addressLine1" value={profile.addressLine1} required placeholder="Calle y número" wide autoComplete="address-line1" />
                 <Field label="Sector" name="sector" value={profile.sector} placeholder="Opcional" autoComplete="address-level3" />

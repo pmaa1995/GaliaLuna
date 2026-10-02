@@ -128,14 +128,10 @@ export default function ProductDetailView({ product, relatedProducts }: ProductD
 
           {lastDirectOrder?.ok ? (
             <div className="pdp__confirmation" role="status">
-              <p className="pdp__eyebrow">Pedido preparado</p>
-              <p>Confirma el envío del mensaje en WhatsApp para continuar con tu compra.</p>
-              {lastDirectOrder.persisted && lastDirectOrder.orderCode ? (
-                <>
-                  <p className="pdp__order-code">Registrado con código {lastDirectOrder.orderCode}.</p>
-                  {lastDirectOrder.signedIn ? <Link href={`/mi-cuenta/pedidos/${encodeURIComponent(lastDirectOrder.orderCode)}`}>Ver pedido en progreso <ArrowRight size={14} /></Link> : null}
-                </>
-              ) : null}
+              <p className="pdp__eyebrow">Pedido {lastDirectOrder.orderCode} listo</p>
+              <p>Falta un paso: envía el mensaje en WhatsApp para que una asesora lo confirme.</p>
+              {lastDirectOrder.whatsappUrl ? <a href={lastDirectOrder.whatsappUrl} target="_blank" rel="noopener noreferrer">Abrir WhatsApp <ArrowRight size={14} /></a> : null}
+              {lastDirectOrder.signedIn && lastDirectOrder.orderCode ? <Link href={`/mi-cuenta/pedidos/${encodeURIComponent(lastDirectOrder.orderCode)}`}>Ver pedido en mi cuenta <ArrowRight size={14} /></Link> : null}
             </div>
           ) : null}
 
