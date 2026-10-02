@@ -23,6 +23,7 @@
   "dependencies": {
     "@clerk/localizations": "3.37.9",
     "@clerk/nextjs": "6.39.7",
+    "@clerk/shared": "3.48.0",
     "@opennextjs/cloudflare": "1.20.7",
     "@sanity/client": "7.27.0",
     "framer-motion": "^11.18.2",

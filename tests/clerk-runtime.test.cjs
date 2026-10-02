@@ -126,7 +126,7 @@ test("security page re-evaluates runtime availability and the account layout opt
   assert.doesNotMatch(JSON.stringify(page()), /UserProfile/);
   env.CLERK_SECRET_KEY = "test-only-runtime-binding";
   assert.match(JSON.stringify(page()), /UserProfile/);
-  const layout = load("app/mi-cuenta/layout.tsx");
+  const layout = load("app/mi-cuenta/layout.tsx", { ...uiDependencies, "../../components/auth/AuthProvider": "AuthProvider" });
   assert.equal(layout.dynamic, "force-dynamic");
   assert.equal(layout.metadata.robots.index, false);
 });

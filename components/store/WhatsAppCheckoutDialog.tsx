@@ -11,6 +11,7 @@ import {
 } from "react";
 
 import type { CartItem } from "../../store/cartStore";
+import { loadSignedInClerk } from "../../lib/clerkBrowser";
 import useModalAccessibility from "./useModalAccessibility";
 import { WHATSAPP_OWNER_NUMBER, WHATSAPP_PHONE_DISPLAY } from "../../lib/contact";
 import type {
@@ -133,18 +134,6 @@ function readAccountPrefill(user: ClerkLikeUser | null) {
     reference: textValue(profile.reference),
     deliveryNotes: textValue(profile.deliveryNotes),
   };
-}
-
-function readClerkUserFromWindow(): ClerkLikeUser | null {
-  if (typeof window === "undefined") return null;
-
-  const win = window as Window & {
-    Clerk?: {
-      user?: ClerkLikeUser | null;
-    };
-  };
-
-  return win.Clerk?.user ?? null;
 }
 
 function normalizeForm(values: CheckoutFormValues): CheckoutFormValues {
@@ -324,6 +313,7 @@ export default function WhatsAppCheckoutDialog({
   const [signedIn, setSignedIn] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submittingRef = useRef(false);
+  const editedRef = useRef(false);
   const dialogRef = useRef<HTMLDivElement>(null);
   useModalAccessibility(dialogRef, open, onClose, !isSubmitting);
 
@@ -335,11 +325,18 @@ export default function WhatsAppCheckoutDialog({
   useEffect(() => {
     if (!open) return;
 
-    const clerkUser = readClerkUserFromWindow();
-    const prefill = clerkUser ? readAccountPrefill(clerkUser) : readGuestDraft();
-    setFormValues(prefill);
-    setSignedIn(Boolean(clerkUser));
+    let cancelled = false;
+    editedRef.current = false;
+    setFormValues(readGuestDraft());
+    setSignedIn(false);
     setError("");
+    // Resolves immediately for guests; signed-in shoppers get their saved delivery data.
+    void loadSignedInClerk().then((clerk) => {
+      if (cancelled || !clerk?.user) return;
+      setSignedIn(true);
+      if (!editedRef.current) setFormValues(readAccountPrefill(clerk.user));
+    });
+    return () => { cancelled = true; };
   }, [open]);
 
   if (!open) return null;
@@ -350,6 +347,7 @@ export default function WhatsAppCheckoutDialog({
       event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
     ) => {
       const value = event.target.value;
+      editedRef.current = true;
       setFormValues((current) => ({ ...current, [key]: value }));
     };
 
@@ -387,6 +385,8 @@ export default function WhatsAppCheckoutDialog({
 
     submittingRef.current = true;
     setIsSubmitting(true);
+    // A loaded Clerk keeps the session cookie fresh, so the order is linked to the account.
+    await loadSignedInClerk();
     const saveResult = await saveOrderBeforeWhatsApp({
       items,
       values: normalized,

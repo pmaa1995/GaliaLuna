@@ -1,8 +1,6 @@
 ﻿import type { Metadata, Viewport } from "next";
-import { ClerkProvider } from "@clerk/nextjs";
 import { Cormorant_Garamond, Inter } from "next/font/google";
 
-import { clerkLocalization } from "../lib/clerkLocalization";
 import { SITE_URL } from "../lib/seo";
 import "./globals.css";
 import "./storefront.css";
@@ -43,29 +41,12 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const clerkEnabled = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
-  const clerkFrontendApi = process.env.NEXT_PUBLIC_CLERK_FRONTEND_API;
-  const clerkOrigin = clerkFrontendApi ? `https://${clerkFrontendApi}` : null;
-  const content = clerkEnabled ? (
-    <ClerkProvider localization={clerkLocalization}>{children}</ClerkProvider>
-  ) : (
-    children
-  );
-
   return (
     <html lang="es">
-      <head>
-        {clerkEnabled && clerkOrigin ? (
-          <>
-            <link rel="dns-prefetch" href={clerkOrigin} />
-            <link rel="preconnect" href={clerkOrigin} crossOrigin="anonymous" />
-          </>
-        ) : null}
-      </head>
       <body
         className={`${inter.variable} ${playfair.variable} bg-[color:var(--bg-shell)] text-[color:var(--ink)] antialiased`}
       >
-        {content}
+        {children}
       </body>
     </html>
   );

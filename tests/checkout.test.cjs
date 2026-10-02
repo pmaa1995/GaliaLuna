@@ -302,6 +302,7 @@ test("client rejects HTTP failure, unpersisted response and malformed JSON befor
     return load("components/store/WhatsAppCheckoutDialog.tsx", {
       "react/jsx-runtime": {}, "lucide-react": {}, react: {},
       "./useModalAccessibility": {},
+      "../../lib/clerkBrowser": {},
       "../../lib/contact": {},
       "../../types/product": load("types/product.ts"),
     }, { fetch });
