@@ -12,7 +12,6 @@ import { FALLBACK_PRODUCT_IMAGE, PRODUCT_IMAGE_BLUR_DATA_URL, formatDOP, toCartP
 import ProductCard from "./ProductCard";
 import ProgressiveImage from "./ProgressiveImage";
 import useModalAccessibility from "./useModalAccessibility";
-import type { WhatsAppCheckoutSubmitResult } from "./WhatsAppCheckoutDialog";
 import "./product-detail.css";
 
 const WhatsAppCheckoutDialog = dynamic(() => import("./WhatsAppCheckoutDialog"), { ssr: false });
@@ -32,7 +31,6 @@ export default function ProductDetailView({ product, relatedProducts }: ProductD
   const [activeIndex, setActiveIndex] = useState(0);
   const [isZoomOpen, setIsZoomOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
-  const [lastDirectOrder, setLastDirectOrder] = useState<WhatsAppCheckoutSubmitResult | null>(null);
   const zoomRef = useRef<HTMLDivElement>(null);
   const addItem = useCartStore((state) => state.addItem);
   const openCart = useCartStore((state) => state.openCart);
@@ -50,7 +48,6 @@ export default function ProductDetailView({ product, relatedProducts }: ProductD
     setActiveIndex(0);
     setIsZoomOpen(false);
     setIsCheckoutOpen(false);
-    setLastDirectOrder(null);
   }, [product._id]);
 
   const previousImage = () => setActiveIndex((index) => (index - 1 + gallery.length) % gallery.length);
@@ -126,14 +123,6 @@ export default function ProductDetailView({ product, relatedProducts }: ProductD
             <p className="pdp__purchase-note">El pago y la entrega se confirman con una asesora por WhatsApp. Puedes comprar sin crear una cuenta.{canOrder ? <> <a href={enquiryHref} target="_blank" rel="noopener noreferrer">¿Tienes dudas? Escríbenos.</a></> : null}</p>
           </div>
 
-          {lastDirectOrder?.ok ? (
-            <div className="pdp__confirmation" role="status">
-              <p className="pdp__eyebrow">Pedido {lastDirectOrder.orderCode} listo</p>
-              <p>Falta un paso: envía el mensaje en WhatsApp para que una asesora lo confirme.</p>
-              {lastDirectOrder.whatsappUrl ? <a href={lastDirectOrder.whatsappUrl} target="_blank" rel="noopener noreferrer">Abrir WhatsApp <ArrowRight size={14} /></a> : null}
-              {lastDirectOrder.signedIn && lastDirectOrder.orderCode ? <Link href={`/mi-cuenta/pedidos/${encodeURIComponent(lastDirectOrder.orderCode)}`}>Ver pedido en mi cuenta <ArrowRight size={14} /></Link> : null}
-            </div>
-          ) : null}
 
           <div className="pdp__details">
             <details open>
@@ -180,7 +169,7 @@ export default function ProductDetailView({ product, relatedProducts }: ProductD
         </div>
       ) : null}
 
-      {isCheckoutOpen ? <WhatsAppCheckoutDialog open onClose={() => setIsCheckoutOpen(false)} items={directCheckoutItems} source="product" onSubmitted={setLastDirectOrder} /> : null}
+      {isCheckoutOpen ? <WhatsAppCheckoutDialog open onClose={() => setIsCheckoutOpen(false)} items={directCheckoutItems} source="product" /> : null}
     </div>
   );
 }

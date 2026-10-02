@@ -4,7 +4,6 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import Link from "next/link";
 import {
   ArrowRight,
-  MessageCircle,
   Minus,
   Plus,
   ShoppingBag,
@@ -24,7 +23,6 @@ import {
   formatDOP,
 } from "../../types/product";
 import WhatsAppCheckoutDialog from "./WhatsAppCheckoutDialog";
-import type { WhatsAppCheckoutSubmitResult } from "./WhatsAppCheckoutDialog";
 import ProgressiveImage from "./ProgressiveImage";
 import useModalAccessibility from "./useModalAccessibility";
 
@@ -85,8 +83,6 @@ export default function CartDrawer({ floating = true }: { floating?: boolean }) 
   const [hasMounted, setHasMounted] = useState(false);
   const dialogRef = useRef<HTMLElement>(null);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
-  const [lastOrderSubmission, setLastOrderSubmission] =
-    useState<WhatsAppCheckoutSubmitResult | null>(null);
 
   const items = useCartStore((state) => state.items);
   const isOpen = useCartStore((state) => state.isOpen);
@@ -106,12 +102,6 @@ export default function CartDrawer({ floating = true }: { floating?: boolean }) 
   const totalItems = calculateCartCount(safeItems);
   useModalAccessibility(dialogRef, safeIsOpen, closeCart);
 
-  useEffect(() => {
-    if (!safeIsOpen) return;
-    if (safeItems.length > 0) {
-      setLastOrderSubmission(null);
-    }
-  }, [safeIsOpen, safeItems.length]);
 
   return (
     <>
@@ -159,32 +149,12 @@ export default function CartDrawer({ floating = true }: { floating?: boolean }) 
             </header>
 
             <div className="sheet-body">
-              {lastOrderSubmission?.ok ? (
-                <div className="cart-done" role="status">
-                  <p className="cart-done-title">Pedido {lastOrderSubmission.orderCode} listo</p>
-                  <p>Falta un paso: envía el mensaje en WhatsApp para que una asesora lo confirme.</p>
-                  <div className="cart-done-actions">
-                    {lastOrderSubmission.whatsappUrl ? (
-                      <a href={lastOrderSubmission.whatsappUrl} target="_blank" rel="noopener noreferrer" className="sheet-submit">
-                        <MessageCircle size={16} aria-hidden="true" />Abrir WhatsApp
-                      </a>
-                    ) : null}
-                    {lastOrderSubmission.signedIn && lastOrderSubmission.orderCode ? (
-                      <Link href={`/mi-cuenta/pedidos/${encodeURIComponent(lastOrderSubmission.orderCode)}`} onClick={closeCart} className="cart-link">
-                        Ver pedido en mi cuenta
-                      </Link>
-                    ) : null}
-                  </div>
-                </div>
-              ) : null}
               {safeItems.length === 0 ? (
-                lastOrderSubmission?.ok ? null : (
-                  <div className="cart-empty">
-                    <p className="sheet-title">Tu pedido está vacío</p>
-                    <p>Añade piezas desde la colección y envíanos tu pedido por WhatsApp cuando quieras.</p>
-                    <Link href="/coleccion" onClick={closeCart} className="shop-button shop-button-primary">Explorar la colección</Link>
-                  </div>
-                )
+                <div className="cart-empty">
+                  <p className="sheet-title">Tu pedido está vacío</p>
+                  <p>Añade piezas desde la colección y envíanos tu pedido por WhatsApp cuando quieras.</p>
+                  <Link href="/coleccion" onClick={closeCart} className="shop-button shop-button-primary">Explorar la colección</Link>
+                </div>
               ) : (
                 <ul className="cart-lines">
                   {safeItems.map((item) => (
@@ -221,10 +191,11 @@ export default function CartDrawer({ floating = true }: { floating?: boolean }) 
         items={safeItems}
         source="cart"
         onSubmitted={(result) => {
+          // The home page shows the receipt; the cart starts empty for the next order.
           if (result.ok && result.persisted) {
             clearCart();
+            closeCart();
           }
-          setLastOrderSubmission(result);
         }}
       />
     </>

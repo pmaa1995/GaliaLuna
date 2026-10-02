@@ -17,7 +17,7 @@ const check = (name, condition) => { assert.ok(condition, name); report.checks.p
     page.setDefaultTimeout(45000);
     page.on('pageerror', err => report.errors.push(err.message));
     page.on('console', msg => { if (msg.type() === 'error' && /hydration|did not match|server rendered html/i.test(msg.text())) report.hydrationErrors.push(msg.text()); });
-    await page.goto(new URL('/coleccion', baseURL).href, { waitUntil: 'domcontentloaded' });
+    await page.goto(new URL('/coleccion', baseURL).href, { waitUntil: 'networkidle' });
     const productCard = page.locator('.shop-product-card').filter({ has: page.locator('button:not([disabled])') }).first();
     await productCard.waitFor();
     const name = (await productCard.locator('h3').textContent()).trim();
@@ -37,7 +37,7 @@ const check = (name, condition) => { assert.ok(condition, name); report.checks.p
     await categoryLink.click();
     await page.waitForURL(`**${categoryHref}`);
     check('Breadcrumb navigates to the category collection', new URL(page.url()).pathname.startsWith('/coleccion/'));
-    await page.goto(new URL(productHref, baseURL).href, { waitUntil: 'domcontentloaded' });
+    await page.goto(new URL(productHref, baseURL).href, { waitUntil: 'networkidle' });
 
     const openZoom = page.getByRole('button', { name: `Ampliar imagen de ${name}`, exact: true });
     await openZoom.click();
@@ -76,7 +76,7 @@ const check = (name, condition) => { assert.ok(condition, name); report.checks.p
     await page.keyboard.press('Escape');
     await cart.waitFor({ state: 'detached' });
     check('Cart returns focus to primary action', await add.evaluate(el => el === document.activeElement));
-    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.reload({ waitUntil: 'networkidle' });
     await page.getByRole('button', { name: /^Abrir pedido \(1 piezas\)$/ }).waitFor();
     check('PDP reload preserves cart without hydration mismatch', true);
 
@@ -112,8 +112,12 @@ const check = (name, condition) => { assert.ok(condition, name); report.checks.p
     await checkout.waitFor({ state: 'detached' });
     check('Successful direct checkout prepares one intercepted WhatsApp message', requestCount === 2 && await page.evaluate(() => window.__pdpTest.redirects.length === 1));
     check('Direct checkout leaves the separate cart intact', await page.evaluate(() => JSON.parse(localStorage.getItem('galia-luna-cart-v1')).state.items.length === 1));
-    check('Direct checkout restores focus to its opener', await direct.evaluate(el => el === document.activeElement));
-    check('Confirmation shows code and asks to send WhatsApp message', (await page.locator('.pdp__confirmation').textContent()).includes(code) && (await page.locator('.pdp__confirmation').textContent()).includes('Falta un paso'));
+    await page.waitForURL(url => new URL(url).searchParams.get('pedido') === code);
+    const receipt = page.getByRole('region', { name: 'Gracias, tu pedido quedó registrado.' });
+    await receipt.waitFor();
+    check('Direct checkout returns home with the order receipt', (await receipt.textContent()).includes(code) && (await receipt.textContent()).includes(name));
+    await page.goto(new URL(productHref, baseURL).href, { waitUntil: 'networkidle' });
+    await summary.waitFor();
 
     for (const width of [320, 390, 768, 1440]) {
       await page.setViewportSize({ width, height: 1000 });
@@ -121,14 +125,14 @@ const check = (name, condition) => { assert.ok(condition, name); report.checks.p
       await page.evaluate(() => document.fonts.ready);
       const overflow = await page.evaluate(() => {
         const viewport = document.documentElement.clientWidth;
-        return [...document.querySelectorAll('.pdp h1,.pdp h2,.pdp button,.pdp a,.pdp__confirmation p')].filter(el => !el.closest('.pdp__thumbnails') && el.getClientRects().length > 0).filter(el => { const r = el.getBoundingClientRect(); return r.left < -1 || r.right > viewport + 1 || el.scrollWidth > el.clientWidth + 1; }).map(el => el.textContent?.trim().slice(0, 80));
+        return [...document.querySelectorAll('.pdp h1,.pdp h2,.pdp button,.pdp a')].filter(el => !el.closest('.pdp__thumbnails') && el.getClientRects().length > 0).filter(el => { const r = el.getBoundingClientRect(); return r.left < -1 || r.right > viewport + 1 || el.scrollWidth > el.clientWidth + 1; }).map(el => el.textContent?.trim().slice(0, 80));
       });
-      check(`PDP controls and long order code fit viewport ${width}: ${JSON.stringify(overflow)}`, overflow.length === 0);
+      check(`PDP controls fit viewport ${width}: ${JSON.stringify(overflow)}`, overflow.length === 0);
     }
     if (process.env.STOREFRONT_SCREENSHOTS) {
       for (const width of [390, 1440]) {
         await page.setViewportSize({ width, height: 1000 });
-        await page.goto(new URL(productHref, baseURL).href, { waitUntil: 'domcontentloaded' });
+        await page.goto(new URL(productHref, baseURL).href, { waitUntil: 'networkidle' });
         await summary.waitFor();
         await page.evaluate(() => { window.scrollTo(0, 0); return document.fonts.ready; });
         await page.waitForFunction(() => [...document.images].filter(img => img.getBoundingClientRect().top < innerHeight).every(img => img.complete));

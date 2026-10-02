@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronLeft, MessageCircle, X } from "lucide-react";
+import { useRouter } from "next/navigation";
 import {
   useEffect,
   useMemo,
@@ -15,6 +16,7 @@ import { loadSignedInClerk } from "../../lib/clerkBrowser";
 import useModalAccessibility from "./useModalAccessibility";
 import { WHATSAPP_OWNER_NUMBER } from "../../lib/contact";
 import { DR_PROVINCES, matchProvince } from "../../lib/orders/provinces";
+import { ORDER_RECEIPT_PARAM, saveOrderReceipt } from "../../lib/orders/receipt";
 import { hasEnoughLetters, isValidCheckoutPhone } from "../../lib/orders/validation";
 import type {
   CheckoutSource,
@@ -326,6 +328,7 @@ export default function WhatsAppCheckoutDialog({
   const submittingRef = useRef(false);
   const editedRef = useRef(false);
   const dialogRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
   useModalAccessibility(dialogRef, open, onClose, !isSubmitting);
 
   const total = useMemo(
@@ -420,6 +423,27 @@ export default function WhatsAppCheckoutDialog({
 
     const url = `https://api.whatsapp.com/send?phone=${WHATSAPP_OWNER_NUMBER}&text=${encodeURIComponent(message)}`;
 
+    let whatsappOpened = false;
+    if (whatsappTab) {
+      try {
+        whatsappTab.location.replace(buildWhatsAppBridgeUrl(url));
+        whatsappOpened = true;
+      } catch {
+        // The receipt below offers the WhatsApp button instead.
+      }
+    }
+
+    // The site returns to the home page with a receipt; WhatsApp carries the message in its own tab.
+    saveOrderReceipt({
+      orderCode: saveResult.orderCode,
+      createdAt: new Date().toISOString(),
+      items: items.map((item) => ({ name: item.name, quantity: item.quantity, price: item.price })),
+      total,
+      whatsappUrl: url,
+      whatsappOpened,
+      signedIn,
+    });
+
     onSubmitted?.({
       ok: true,
       persisted: true,
@@ -428,17 +452,7 @@ export default function WhatsAppCheckoutDialog({
       source,
       whatsappUrl: url,
     });
-
-    if (whatsappTab) {
-      try {
-        whatsappTab.location.replace(buildWhatsAppBridgeUrl(url));
-      } catch {
-        window.location.assign(url);
-      }
-    } else {
-      // Popup blocked: fall back to same-tab redirect (no extra blank tabs).
-      window.location.assign(url);
-    }
+    router.push(`/?${ORDER_RECEIPT_PARAM}=${encodeURIComponent(saveResult.orderCode)}`);
     submittingRef.current = false;
     setIsSubmitting(false);
     onClose();

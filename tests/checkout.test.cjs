@@ -74,6 +74,17 @@ test("checkout rejects junk contact data and honeypot submissions", () => {
   assert.equal(validation.parseCheckoutPayload(payload({ website: "" })).customer.fullName, customer.fullName);
 });
 
+test("order receipts accept only order codes and round-trip on the device", () => {
+  const store = new Map();
+  const receipt = load("lib/orders/receipt.ts", {}, { window: { localStorage: { getItem: (k) => store.get(k) ?? null, setItem: (k, v) => store.set(k, v) } } });
+  assert.equal(receipt.isOrderCode("GL-20260918-365"), true);
+  for (const value of ["", "GL-", "<script>", "GL-12 34", "XX-20260918-365", null]) assert.equal(receipt.isOrderCode(value), false);
+  const data = { orderCode: "GL-20260918-365", createdAt: "2026-09-18T12:23:00.000Z", items: [{ name: "Anillo", quantity: 1, price: 3200 }], total: 3200, whatsappUrl: "https://api.whatsapp.com/send?phone=1", whatsappOpened: true, signedIn: false };
+  receipt.saveOrderReceipt(data);
+  assert.equal(receipt.readOrderReceipt("GL-20260918-365").total, 3200);
+  assert.equal(receipt.readOrderReceipt("GL-OTRO-1"), null);
+});
+
 test("province matching maps earlier free text to the canonical list", () => {
   const { matchProvince, DR_PROVINCES } = load("lib/orders/provinces.ts");
   assert.equal(DR_PROVINCES.length, 32);
@@ -325,6 +336,8 @@ test("client rejects HTTP failure, unpersisted response and malformed JSON befor
       "react/jsx-runtime": {}, "lucide-react": {}, react: {},
       "./useModalAccessibility": {},
       "../../lib/clerkBrowser": {},
+      "next/navigation": { useRouter: () => ({ push() {} }) },
+      "../../lib/orders/receipt": load("lib/orders/receipt.ts"),
       "../../lib/orders/provinces": load("lib/orders/provinces.ts"),
       "../../lib/orders/validation": validation,
       "../../lib/contact": {},

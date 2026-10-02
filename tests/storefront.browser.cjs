@@ -133,10 +133,15 @@ const code = 'GL-20261001-0123456789ABCDEF0123456789ABCDEF';
     await checkout.getByRole('button', { name: 'Enviar pedido por WhatsApp', exact: true }).click();
     await checkout.waitFor({ state: 'detached' });
     check('Persisted success clears cart and prepares one intercepted redirect', await page.evaluate(() => JSON.parse(localStorage.getItem('galia-luna-cart-v1')).state.items.length === 0 && window.__checkoutTest.redirects.length === 1));
-    check('Success still requires WhatsApp confirmation', (await cart.textContent()).includes('Falta un paso: envía el mensaje en WhatsApp') && await cart.getByRole('link', { name: 'Abrir WhatsApp' }).count() === 1);
-    await page.keyboard.press('Escape');
+    await page.waitForURL(url => new URL(url).pathname === '/' && new URL(url).searchParams.get('pedido') === code);
+    const receipt = page.getByRole('region', { name: 'Gracias, tu pedido quedó registrado.' });
+    await receipt.waitFor();
+    check('Success returns home with a receipt and the WhatsApp step', (await receipt.textContent()).includes(code) && (await receipt.textContent()).includes('Total estimado') && await receipt.getByRole('link', { name: 'Abrir WhatsApp de nuevo' }).count() === 1);
     await cart.waitFor({ state: 'detached' });
-    check('Cart dismissal restores background', await page.locator('main').evaluate(el => !el.closest('[inert]')));
+    check('Cart closes after a sent order and restores background', await page.locator('main').evaluate(el => !el.closest('[inert]')));
+    await receipt.getByRole('button', { name: 'Seguir comprando' }).click();
+    await page.waitForURL(url => !new URL(url).searchParams.has('pedido'));
+    check('Receipt can be dismissed', await receipt.count() === 0);
     for (const width of [320, 390, 768, 1440]) {
       await page.setViewportSize({ width, height: 1000 });
       for (const route of ['/', '/coleccion']) {

@@ -36,10 +36,7 @@
 .pdp__button--secondary:hover { background: var(--bg-soft); }
 .pdp__purchase-note { margin-top: 4px; max-width: 50ch; color: var(--ink-soft); font-size: 12px; line-height: 1.7; }
 .pdp__purchase-note a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
-.pdp__confirmation { margin-top: 24px; padding: 18px; border-left: 2px solid var(--brand-sage); background: var(--bg-soft); font-size: 13px; line-height: 1.7; }
-.pdp__confirmation p + p { margin-top: 8px; }
-.pdp__order-code { overflow-wrap: anywhere; }
-.pdp__confirmation a, .pdp__details a { display: inline-flex; align-items: center; gap: 8px; margin-top: 12px; text-decoration: underline; text-underline-offset: 4px; }
+.pdp__details a { display: inline-flex; align-items: center; gap: 8px; margin-top: 12px; text-decoration: underline; text-underline-offset: 4px; }
 .pdp__details { margin-top: 30px; border-top: 1px solid var(--line); }
 .pdp__details details { border-bottom: 1px solid var(--line); }
 .pdp__details summary { display: flex; min-height: 58px; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; list-style: none; color: var(--ink); font-size: 12px; }

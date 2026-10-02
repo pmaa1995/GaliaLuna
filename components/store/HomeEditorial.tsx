@@ -1,10 +1,11 @@
 import Link from "next/link";
-import type { CSSProperties } from "react";
+import { Suspense, type CSSProperties } from "react";
 import { ArrowRight, ArrowUpRight, MessageCircle, PackageCheck, ShoppingBag } from "lucide-react";
 import { WHATSAPP_OWNER_NUMBER } from "../../lib/contact";
 import { collectionCategories, selectHomeProducts } from "../../lib/storefront";
 import { FALLBACK_PRODUCT_IMAGE, PRODUCT_IMAGE_BLUR_DATA_URL, formatDOP, type Product } from "../../types/product";
 import ProgressiveImage from "./ProgressiveImage";
+import OrderReceipt from "./OrderReceipt";
 import ProductCard from "./ProductCard";
 
 interface HomeEditorialProps { products: Product[]; heroProducts?: Product[]; featuredProduct?: Product; }
@@ -15,6 +16,7 @@ export default function HomeEditorial({ products, heroProducts, featuredProduct 
   const selection = selectHomeProducts(products, hero?._id);
   const categories = collectionCategories.map((category) => ({ ...category, products: products.filter((product) => product.category === category.label) })).filter((category) => category.products.length > 0);
   return <>
+    <Suspense fallback={null}><OrderReceipt /></Suspense>
     <section className="shop-hero" aria-labelledby="hero-title">
       <div className="shop-hero-copy"><p className="shop-eyebrow">EL UNIVERSO GALIA LUNA</p><h1 id="hero-title">Lo especial está<br />en los detalles.</h1><p>Joyas y accesorios con personalidad.<br />Encuentra esa pieza que se siente tuya.</p><Link href="/coleccion" className="shop-button shop-button-primary">Explorar la colección <ArrowRight size={17} /></Link><span className="shop-hero-note">{products.length > 0 && <>{products.length} {products.length === 1 ? "pieza para descubrir" : "piezas para descubrir"}. </>}Te acompañamos al comprar.</span></div>
       <div className="shop-hero-media">
