@@ -47,6 +47,8 @@
 .shop-category-tile > span { display:block; color:var(--ink-soft); font-size:10px; margin-top:6px; }
 .shop-category-monogram { display:flex; align-items:center; justify-content:center; height:100%; font-family:var(--font-playfair),serif; font-size:70px; color:var(--ink-soft); }
 .shop-selection { background:#f7f4ef; }
+.shop-selection-more { display:flex; flex-direction:column; align-items:center; gap:16px; margin-top:36px; text-align:center; }
+.shop-selection-more p { font-size:13px; line-height:1.7; color:var(--ink-soft); }
 .shop-product-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:42px 24px; }
 .shop-product-card { min-width:0; display:flex; flex-direction:column; }
 .shop-product-image { display:block; position:relative; aspect-ratio:4/5; overflow:hidden; background:var(--bg-soft); }

@@ -19,6 +19,7 @@ const code = 'GL-20261001-0123456789ABCDEF0123456789ABCDEF';
     await page.goto(baseURL, { waitUntil: 'networkidle' });
     check('Home has one main and one h1', await page.locator('main').count() === 1 && await page.locator('h1').count() === 1);
     check('Home has a direct collection CTA', await page.getByRole('link', { name: 'Explorar la colección', exact: true }).count() === 1);
+    check('Home explains its limited selection and links the full catalog', await page.locator('.shop-selection-more').getByRole('link', { name: 'Ver colección completa', exact: true }).count() === 1 && /\d+ piezas para descubrir/.test(await page.locator('.shop-hero-note').textContent()));
     const searchButton = page.getByRole('button', { name: 'Buscar piezas', exact: true });
     await searchButton.click();
     const searchDialog = page.getByRole('dialog', { name: 'Encuentra tu próxima pieza' });
@@ -35,11 +36,12 @@ const code = 'GL-20261001-0123456789ABCDEF0123456789ABCDEF';
     await page.goto(new URL('/coleccion', baseURL).href, { waitUntil: 'networkidle' });
     const cards = page.locator('#resultados-catalogo .shop-product-card');
     const initialCount = await cards.count();
-    check('Collection is paginated and server rendered', initialCount > 0 && initialCount <= 12 && await page.locator('h1').count() === 1);
+    const totalCount = Number(await page.locator('.shop-catalog-categories a').first().locator('span').textContent());
+    check('Collection renders all products up to 24 with an accurate total', initialCount === Math.min(totalCount, 24) && initialCount > 0 && await page.locator('h1').count() === 1);
     const productName = (await cards.first().locator('h3').textContent()).trim();
     const search = page.locator('#catalog-search');
     await search.fill(productName.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase());
-    await page.waitForFunction(() => document.querySelectorAll('.shop-product-card').length < 12);
+    await page.waitForFunction(count => document.querySelectorAll('.shop-product-card').length < count, initialCount);
     check('Search ignores case and accent differences', (await cards.first().locator('h3').textContent()).trim() === productName);
     await search.fill('zz-no-existe-928341');
     await page.getByText('No encontramos esa combinación.', { exact: true }).waitFor();
@@ -64,7 +66,11 @@ const code = 'GL-20261001-0123456789ABCDEF0123456789ABCDEF';
     const more = page.getByRole('link', { name: 'Ver más piezas', exact: true });
     if (await more.count()) {
       await more.click();
-      await page.waitForFunction(() => document.querySelectorAll('.shop-product-card').length > 12);
+      await page.waitForFunction(count => document.querySelectorAll('.shop-product-card').length > count, initialCount);
+    } else {
+      check('Small catalogs have no hidden second page', initialCount === totalCount);
+    }
+    {
       const expandedCount = await cards.count();
       const lastCard = cards.last();
       await lastCard.scrollIntoViewIfNeeded();
@@ -73,7 +79,7 @@ const code = 'GL-20261001-0123456789ABCDEF0123456789ABCDEF';
       await page.waitForURL('**/product/**');
       await page.goBack({ waitUntil: 'networkidle' });
       await page.waitForFunction(count => document.querySelectorAll('.shop-product-card').length === count, expandedCount);
-      check('Back from expanded results restores pagination', await cards.count() === expandedCount && page.url().includes('pagina=2'));
+      check('Back restores the complete visible catalog', await cards.count() === expandedCount && (expandedCount <= 24 || page.url().includes('pagina=2')));
       await page.waitForFunction(expected => Math.abs(scrollY - expected) < 180, scrollBefore, { timeout: 5000 }).catch(async () => { throw new Error('Scroll restoration: ' + JSON.stringify({ before: scrollBefore, after: await page.evaluate(() => scrollY), history: await page.evaluate(() => history.state?.galiaCatalog) })); });
       check('Back restores catalog scroll position', Math.abs(await page.evaluate(() => scrollY) - scrollBefore) < 180);
     }

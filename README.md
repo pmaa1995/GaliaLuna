@@ -16,7 +16,10 @@ Tienda de joyería de [www.galialuna.com](https://www.galialuna.com), con catál
 Requiere Node.js 22.13 o posterior (verificado con 22.20). Instala con `npm ci`, copia los nombres de variables de `.env.example` a un archivo local e introduce únicamente las credenciales necesarias. No subir credenciales al repositorio.
 
 - `npm run dev`: desarrollo de la tienda.
-- `npm run studio`: administración de contenido Sanity.
+- `npm run studio:install`: instala las dependencias independientes del panel.
+- `npm run studio`: administración de contenido Sanity, después de instalar su paquete.
+- `npm run studio:build`, `npm run studio:typecheck`: comprueban el panel sin publicarlo.
+- `npm run catalog:audit -- --output catalogo.json --csv catalogo.csv`: inventario público y revisión de calidad sin modificar productos.
 - `npm run lint`, `npm run typecheck`, `npm test`: comprobaciones de calidad.
 - `npm run build`: compilación de Next.js.
 - `npm run cf:build`: compilación del adaptador Cloudflare, sin publicar.
@@ -30,7 +33,8 @@ Requiere Node.js 22.13 o posterior (verificado con 22.20). Instala con `npm ci`,
 - `lib/admin/auth.ts`: autorización del panel administrativo.
 - `lib/orders/`: validación, almacenamiento D1 e inventario Sanity.
 - `store/cartStore.ts`: carrito persistido en el navegador.
-- `sanity/`: esquema y cliente del CMS.
+- `sanity/`: clientes de datos, consultas, mapeo y validación de imágenes del CMS.
+- `studio/`: panel Sanity con esquemas, dependencias y lock independientes.
 - `tests/`: pruebas de regresión sin pedidos ni mutaciones reales.
 - `wrangler.jsonc`: dominios, binding de imágenes y base D1 de producción.
 - `.github/workflows/`: validación y despliegue al actualizar main.
@@ -53,9 +57,11 @@ Fuentes técnicas: [Next.js JSON-LD](https://nextjs.org/docs/app/guides/json-ld)
 
 ## Dependencias revisadas el 1 de octubre de 2026
 
-Versiones fijadas: Next.js 15.5.27, React/React DOM 19.1.9, Clerk 6.39.7, OpenNext Cloudflare 1.20.7 y Wrangler 4.146.0. Overrides compatibles corrigen PostCSS dentro de Next y glob en las herramientas de Sanity.
+Versiones fijadas: Next.js 15.5.27, React/React DOM 19.1.9, Clerk 6.39.7, OpenNext Cloudflare 1.20.7 y Wrangler 4.146.0. Un override compatible corrige PostCSS dentro de Next.
 
-La auditoría de dependencias de producción pasó de 63 a 15 avisos: 11 moderados, 3 altos y 1 crítico. Los avisos restantes pertenecen a Sanity/Studio y sus herramientas de línea de comandos (adm-zip, decompress y cadenas relacionadas). No se considera una auditoría limpia. Resolverlos requiere actualizar y validar el conjunto Sanity/next-sanity; no aplicar npm audit fix --force sin comprobar las migraciones y el Studio.
+La tienda usa `@sanity/client` 7.27.0; ya no instala Sanity Studio, `next-sanity` ni `styled-components`. Su auditoría npm pasó de los 15 avisos pendientes a **0 avisos conocidos**. El Studio se valida y audita por separado en `studio/`; su instalación no forma parte del Worker. Una auditoría sin avisos conocidos no sustituye revisar permisos, datos y comportamiento en producción.
+
+El Studio actualizado a Sanity 6.17.0 conserva **14 avisos** (10 moderados, 4 altos y 0 críticos), documentados en [studio/README.md](studio/README.md). Sus comprobaciones de tipos y compilación pasan, pero los avisos de sus herramientas siguen pendientes; no se considera que todo el proyecto tenga una auditoría limpia.
 
 Los tests simulan Clerk/Sanity y prueban transacciones con SQLite en memoria. No modifican pedidos, usuarios ni inventario reales. El despliegue y las pruebas con las credenciales de producción son un paso posterior.
 ## Prueba opcional de navegador
@@ -70,6 +76,8 @@ Si Playwright no está instalado en el proyecto, `PLAYWRIGHT_MODULE` puede apunt
 La portada editorial se sirve desde HomeEditorial (componente servidor). /coleccion agrupa el catálogo y /coleccion/[categoria] ofrece las categorías. CatalogBrowser mantiene búsqueda, precio máximo, stock confirmado, orden y paginación en la URL; recupera filtros y posición al volver desde una pieza. Precio y stock también funcionan mediante formulario GET sin JavaScript. La colección se renderiza en servidor bajo demanda y reutiliza la lectura cacheada del catálogo. Las combinaciones de filtros tienen canonical a su categoría y noindex.
 
 StoreShell comparte cabecera y pie entre portada, colección y producto. El carrito y el formulario de compra se cargan cuando se necesitan. La portada mantiene salvia, coral, arena y tipografía editorial; utiliza fotografías del catálogo y no promete existencias, materiales ni condiciones de entrega que no estén verificados. Las categorías vacías no ocupan un espacio destacado en la portada.
+
+La portada informa del total real y muestra una selección de cuatro piezas de distintas categorías. La colección carga hasta 24 piezas inicialmente: los 20 productos publicados al 1 de octubre de 2026 aparecen completos al entrar. La explicación de plataforma, calidad de catálogo y prioridades de venta está en [docs/CATALOGO_Y_VENTA.md](docs/CATALOGO_Y_VENTA.md).
 
 Para compilar con tu Ubuntu WSL2, sigue [docs/WSL_BUILD.md](docs/WSL_BUILD.md). El script scripts/wsl-snapshot.sh prepara una copia aislada en ext4 con Node 22.20.0 Linux; conserva el Node global y separa los node_modules de Windows. WSL resuelve el entorno de compilación Linux. No sustituye las mediciones de visitantes después de publicar.
 

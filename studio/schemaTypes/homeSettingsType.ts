@@ -2,14 +2,14 @@ import { defineArrayMember, defineField, defineType } from "sanity";
 
 export const homeSettingsType = defineType({
   name: "homeSettings",
-  title: "Home Settings",
+  title: "Portada de la tienda",
   type: "document",
   fields: [
     defineField({
       name: "heroProducts",
-      title: "Productos del collage principal",
+      title: "Productos de respaldo para la portada",
       description:
-        "Selecciona hasta 3 productos. El orden define izquierda, centro y derecha en el home.",
+        "Selecciona hasta 3 productos. Se usa el primero disponible si no hay una pieza principal seleccionada.",
       type: "array",
       of: [
         defineArrayMember({
@@ -21,7 +21,7 @@ export const homeSettingsType = defineType({
     }),
     defineField({
       name: "featuredProduct",
-      title: "Producto destacado (panel derecho)",
+      title: "Pieza principal de la portada",
       type: "reference",
       to: [{ type: "product" }],
     }),
@@ -29,8 +29,8 @@ export const homeSettingsType = defineType({
   preview: {
     prepare() {
       return {
-        title: "Configuración del Home",
-        subtitle: "Collage principal y producto destacado",
+        title: "Configuración de la portada",
+        subtitle: "Pieza principal y productos de respaldo",
       };
     },
   },

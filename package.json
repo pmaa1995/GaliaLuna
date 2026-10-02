@@ -8,8 +8,12 @@
     "start": "next start",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx,.mjs,.cjs",
     "typecheck": "next typegen && tsc --noEmit",
-    "studio": "sanity dev",
-    "studio:deploy": "sanity deploy",
+    "studio": "npm --prefix studio run dev",
+    "studio:install": "npm --prefix studio ci",
+    "studio:build": "npm --prefix studio run build",
+    "studio:typecheck": "npm --prefix studio run typecheck",
+    "studio:deploy": "npm --prefix studio run deploy",
+    "catalog:audit": "node scripts/audit-catalog.mjs",
     "cf:build": "opennextjs-cloudflare build",
     "cf:dev": "opennextjs-cloudflare build && wrangler dev",
     "cf:deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
@@ -19,14 +23,12 @@
   "dependencies": {
     "@clerk/nextjs": "6.39.7",
     "@opennextjs/cloudflare": "1.20.7",
+    "@sanity/client": "7.27.0",
     "framer-motion": "^11.18.2",
     "lucide-react": "^0.469.0",
     "next": "15.5.27",
-    "next-sanity": "^9.8.61",
     "react": "19.1.9",
     "react-dom": "19.1.9",
-    "sanity": "^3.99.0",
-    "styled-components": "^6.3.11",
     "zustand": "^5.0.2"
   },
   "devDependencies": {
@@ -47,12 +49,6 @@
   "overrides": {
     "next": {
       "postcss": "8.5.28"
-    },
-    "@architect/hydrate": {
-      "glob": "10.5.0"
-    },
-    "@architect/utils": {
-      "glob": "10.5.0"
     }
   }
 }

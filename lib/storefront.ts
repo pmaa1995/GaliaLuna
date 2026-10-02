@@ -16,6 +16,22 @@ export function categoryHref(category: ProductCategory) {
   return `/coleccion/${collectionCategories.find((item) => item.label === category)?.slug ?? ""}`;
 }
 
+// Give a small homepage selection the breadth of the catalog, without repeating the hero.
+export function selectHomeProducts(products: Product[], heroId?: string) {
+  const candidates = products.filter((product) => product.isActive && product._id !== heroId);
+  const selection: Product[] = [];
+  const seen = new Set<string>();
+  const add = (product: Product | undefined) => {
+    if (!product || seen.has(product._id) || selection.length >= 4) return;
+    selection.push(product);
+    seen.add(product._id);
+  };
+  for (const category of collectionCategories) add(candidates.find((product) => product.category === category.label));
+  for (const product of candidates) add(product);
+  if (!selection.length) add(products.find((product) => product.isActive));
+  return selection;
+}
+
 export interface StoreFilters {
   q: string;
   sort: "selection" | "price-asc" | "price-desc";
@@ -24,7 +40,7 @@ export interface StoreFilters {
   page: number;
 }
 
-export const COLLECTION_PAGE_SIZE = 12;
+export const COLLECTION_PAGE_SIZE = 24;
 export const defaultFilters: StoreFilters = { q: "", sort: "selection", maxPrice: "", inStock: false, page: 1 };
 
 export function parseStoreFilters(params: URLSearchParams): StoreFilters {

@@ -14,7 +14,7 @@ vm.runInNewContext(code, {
   require(name) { throw new Error("Unexpected storefront dependency: " + name); },
 });
 const { categoryFromSlug, categoryHref, collectionCategories, defaultFilters,
-  filtersQuery, parseStoreFilters, searchParamsToURL, selectProducts } = loadedModule.exports;
+  filtersQuery, parseStoreFilters, searchParamsToURL, selectProducts, selectHomeProducts } = loadedModule.exports;
 
 function product(id, overrides = {}) {
   return {
@@ -26,6 +26,19 @@ function product(id, overrides = {}) {
 function filters(query = "") { return parseStoreFilters(new URLSearchParams(query)); }
 function ids(products) { return Array.from(products, (entry) => entry._id); }
 function plain(value) { return JSON.parse(JSON.stringify(value)); }
+
+test("homepage selection represents categories without duplicate, inactive or repeated hero products", () => {
+  const hero = product("hero");
+  const products = Object.freeze([hero, product("necklace"), product("another-necklace"),
+    product("inactive", { category: "Anillos", isActive: false }),
+    product("ring", { category: "Anillos" }), product("ring", { category: "Anillos" }),
+    product("earrings", { category: "Aretes" }), product("chain", { category: "Cadenas" })]);
+  assert.deepEqual(ids(selectHomeProducts(products, "hero")), ["ring", "earrings", "chain", "necklace"]);
+  assert.deepEqual(ids(selectHomeProducts(products.slice(0, 3), "hero")), ["necklace", "another-necklace"]);
+  assert.deepEqual(ids(selectHomeProducts([hero], "hero")), ["hero"]);
+  assert.deepEqual(ids(selectHomeProducts([product("inactive", { isActive: false })])), []);
+  assert.deepEqual(ids(selectHomeProducts([])), []);
+});
 
 test("catalog search ignores case and accents and requires every word across product fields", () => {
   const products = [

@@ -49,11 +49,11 @@ fi
 # Excluded directories are protected by rsync from deletion during sync.
 # --delete removes only stale copied source files inside the validated snapshot.
 rsync -a --delete \
-  --exclude='/.git/' --exclude='/node_modules/' --exclude='/.next/' \
-  --exclude='/.open-next/' --exclude='/.wrangler/' --exclude='/.sanity/' \
-  --exclude='/dist/' --exclude='/out/' --exclude='/coverage/' \
-  --exclude='/.env' --exclude='/.env.*' --exclude='/.dev.vars' --exclude='/.dev.vars.*' \
-  --exclude='/tsconfig.tsbuildinfo' --exclude='*.log' \
+  --exclude='/.git/' --exclude='node_modules/' --exclude='.next/' \
+  --exclude='.open-next/' --exclude='.wrangler/' --exclude='.sanity/' \
+  --exclude='dist/' --exclude='out/' --exclude='coverage/' \
+  --exclude='.env' --exclude='.env.*' --exclude='.dev.vars' --exclude='.dev.vars.*' \
+  --exclude='tsconfig.tsbuildinfo' --exclude='*.log' \
   "$source_root/" "$snapshot/source/"
 (
   cd "$snapshot/source"

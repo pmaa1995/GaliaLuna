@@ -5,6 +5,7 @@
   ],
   "ignorePatterns": [
     "node_modules/",
+    "studio/",
     ".next/",
     ".open-next/",
     ".wrangler/",

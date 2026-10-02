@@ -71,10 +71,23 @@ sha256sum --check "$snapshot/lock.sha256"
 
 - Ubuntu en WSL2, filesystem Linux ext4.
 - Node portable 22.20.0 Linux y npm 10.9.3.
-- Instalación reproducible con `npm ci`: 1.662 paquetes instalados, sin cambios del lock ni dependencias Windows.
+- La instalación anterior al desacoplamiento de Studio instaló 1.662 paquetes. La tienda ahora tiene un lock separado y ya no instala el editor ni su CLI; el número exacto puede variar por plataforma y dependencias opcionales.
+- La nueva instalación Linux de la tienda instaló 700 paquetes; lint, TypeScript, 54 pruebas y la compilación OpenNext terminaron correctamente con ese lock.
 - El Node global de Ubuntu era 20.19.5 y se conservó.
 
 Los resultados de la compilación final se registran cuando termina la sincronización del código final; instalar dependencias por sí solo no confirma el build del worker.
+
+## Validar Studio de forma independiente
+
+Studio tiene su propio `studio/package-lock.json`. Desde `"$snapshot/source"`, con el mismo Node Linux:
+
+```bash
+npm run studio:install
+npm run studio:typecheck
+npm run studio:build
+```
+
+`npm ci` en la raíz no instala Studio. Estos pasos sólo son necesarios si se trabaja en el editor; el Worker se compila con las dependencias de la tienda. La sincronización excluye también `studio/node_modules`, artefactos y variables de entorno. Si cambia el lock de Studio, repite `npm run studio:install`. La configuración del editor sólo admite identificadores públicos `SANITY_STUDIO_PROJECT_ID` y `SANITY_STUDIO_DATASET`; nunca agregues tokens a variables con ese prefijo.
 
 ## Resultado de la validación
 

@@ -1,4 +1,4 @@
-import { createClient } from "next-sanity";
+import { createClient } from "@sanity/client";
 
 import {
   SANITY_API_VERSION,

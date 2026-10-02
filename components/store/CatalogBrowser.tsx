@@ -65,7 +65,7 @@ export default function CatalogBrowser({ products, initialFilters, category, bas
         <a href={basePath} className="shop-text-link" onClick={(event) => { event.preventDefault(); reset(); }}>Restablecer filtros <X size={14} /></a>
       </div>
     </form>
-    <div className="shop-results-summary"><p role="status" aria-live="polite" aria-atomic="true">{results.length} {results.length === 1 ? "pieza" : "piezas"}{filters.q && <> para «{filters.q}»</>}</p>{activeFilters && <a href={basePath} onClick={(event) => { event.preventDefault(); reset(); }} className="shop-text-link">Limpiar <X size={13} /></a>}</div>
+    <div className="shop-results-summary"><p role="status" aria-live="polite" aria-atomic="true">{results.length} {results.length === 1 ? "pieza" : "piezas"}{filters.q && <> para «{filters.q}»</>}{visible.length < results.length && <> · Mostrando {visible.length}</>}</p>{activeFilters && <a href={basePath} onClick={(event) => { event.preventDefault(); reset(); }} className="shop-text-link">Limpiar <X size={13} /></a>}</div>
     <div id="resultados-catalogo" onClickCapture={(event) => {
       const link = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>('a[href^="/product/"]') : null;
       if (!link || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;

@@ -1,6 +1,4 @@
-import { groq } from "next-sanity";
-
-const productProjection = groq`{
+const productProjection = `{
   _id,
   _type,
   name,
@@ -20,23 +18,23 @@ const productProjection = groq`{
   inventory
 }`;
 
-export const allProductsQuery = groq`
+export const allProductsQuery = `
   *[_type == "product" && defined(slug.current)] | order(_createdAt asc)
   ${productProjection}
 `;
 
-export const activeProductSlugsQuery = groq`
+export const activeProductSlugsQuery = `
   *[_type == "product" && defined(slug.current) && coalesce(isActive, true) == true]{
     "slug": slug.current
   }
 `;
 
-export const productBySlugQuery = groq`
+export const productBySlugQuery = `
   *[_type == "product" && slug.current == $slug][0]
   ${productProjection}
 `;
 
-export const homeSettingsQuery = groq`
+export const homeSettingsQuery = `
   *[_type == "homeSettings"][0]{
     heroProducts[]->${productProjection},
     featuredProduct->${productProjection}

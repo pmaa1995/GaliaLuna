@@ -50,8 +50,9 @@ function normalizeImages(input: unknown, fallbackAlt: string): ProductImage[] {
     .map((value) => {
       if (!value || typeof value !== "object") return null;
       const candidate = value as Record<string, unknown>;
-      const url = typeof candidate.url === "string" ? candidate.url : "";
+      const url = typeof candidate.url === "string" ? candidate.url.trim() : "";
 
+      // A broken gallery slot must not replace a real product photo with a placeholder.
       if (!url) return null;
 
       const width =
