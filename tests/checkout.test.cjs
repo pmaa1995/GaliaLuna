@@ -150,7 +150,7 @@ function sqliteD1() {
   let batches = 0;
   return {
     db, get batches() { return batches; },
-    prepare(sql) { return { bind(...values) { return { sql, values }; } }; },
+    prepare(sql) { return { bind(...values) { return { sql, values, all: async () => ({ results: db.prepare(sql).all(...values) }) }; } }; },
     async batch(statements) {
       batches++;
       db.exec("BEGIN");
@@ -175,6 +175,22 @@ test("order and all line items use one transaction with the correct parent ID", 
   assert.equal(db.batches, 1);
   assert.equal(db.db.prepare("SELECT count(*) n FROM orders").get().n, 1);
   assert.equal(db.db.prepare("SELECT count(*) n FROM order_items WHERE order_id=(SELECT id FROM orders)").get().n, 2);
+  db.db.close();
+});
+test("a repeated order reuses its code and a phone is capped at three recent orders", async () => {
+  const db = sqliteD1();
+  const repo = repository(db);
+  const first = await repo.createWhatsAppOrderRecord({ ...payload(), clerkUserId: null });
+  const repeat = await repo.createWhatsAppOrderRecord({ ...payload({ customer: { ...customer, phone: "+1 (809) 000-0000" } }), clerkUserId: null });
+  assert.equal(repeat.orderCode, first.orderCode, "same phone, total and pieces within 10 minutes");
+  assert.equal(db.db.prepare("SELECT count(*) n FROM orders").get().n, 1);
+  const second = await repo.createWhatsAppOrderRecord({ ...payload({ items: [{ ...item, quantity: 1 }] }), clerkUserId: null });
+  const third = await repo.createWhatsAppOrderRecord({ ...payload({ items: [{ ...item, quantity: 3 }] }), clerkUserId: null });
+  assert.ok(second.persisted && third.persisted && second.orderCode !== first.orderCode);
+  const fourth = await repo.createWhatsAppOrderRecord({ ...payload({ items: [{ ...item, quantity: 4 }] }), clerkUserId: null });
+  assert.deepEqual({ ...fourth }, { persisted: false, orderCode: null, throttled: true });
+  const otherPhone = await repo.createWhatsAppOrderRecord({ ...payload({ customer: { ...customer, phone: "829-555-1234" } }), clerkUserId: null });
+  assert.equal(otherPhone.persisted, true);
   db.db.close();
 });
 test("a failed line insert rolls back the whole order", async () => {

@@ -95,6 +95,9 @@ export async function POST(request: Request) {
 
   try {
     const result = await createWhatsAppOrderRecord({ ...payload, clerkUserId });
+    if (result.throttled) {
+      return fail("Ya recibimos varios pedidos con este teléfono hace poco. Si necesitas cambiar algo, escríbenos por WhatsApp.", 429, rate.source);
+    }
     if (!result.persisted || !result.orderCode) {
       return fail("No se pudo registrar el pedido. Intenta de nuevo en un momento.", 503);
     }
