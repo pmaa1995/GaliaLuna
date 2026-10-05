@@ -90,13 +90,13 @@ async function getOrdersRateLimiter(): Promise<RateLimiterBinding | null> {
 }
 
 // Order creation uses Cloudflare's Rate Limiting binding (wrangler.jsonc, 60 s window) when deployed.
-export async function consumeOrderRateLimit(key: string, options: RateLimitOptions): Promise<RateLimitResult> {
+export async function consumeOrderRateLimit(key: string, options: RateLimitOptions): Promise<RateLimitResult & { source: "shared" | "local" }> {
   const limiter = await getOrdersRateLimiter();
-  if (!limiter) return consumeRateLimit(key, options);
+  if (!limiter) return { ...consumeRateLimit(key, options), source: "local" };
   try {
     const { success } = await limiter.limit({ key });
-    return { allowed: success, remaining: null, retryAfterSeconds: 60 };
+    return { allowed: success, remaining: null, retryAfterSeconds: 60, source: "shared" };
   } catch {
-    return consumeRateLimit(key, options);
+    return { ...consumeRateLimit(key, options), source: "local" };
   }
 }

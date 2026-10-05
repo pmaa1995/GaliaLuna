@@ -17,10 +17,10 @@ function getClientIp(request: Request) {
   return request.headers.get("x-real-ip")?.trim() || "unknown";
 }
 
-function fail(error: string, status: number) {
+function fail(error: string, status: number, rateSource?: string) {
   return NextResponse.json<CreateWhatsAppOrderResponse>(
     { ok: false, persisted: false, orderCode: null, error },
-    { status, headers: { "Cache-Control": "no-store" } },
+    { status, headers: { "Cache-Control": "no-store", ...(rateSource ? { "X-RateLimit-Source": rateSource } : {}) } },
   );
 }
 
@@ -65,6 +65,7 @@ export async function POST(request: Request) {
       { status: 429, headers: {
         "Retry-After": String(rate.retryAfterSeconds),
         "Cache-Control": "no-store",
+        "X-RateLimit-Source": rate.source,
       } },
     );
   }
@@ -73,8 +74,8 @@ export async function POST(request: Request) {
   try {
     payload = parseCheckoutPayload(await readLimitedJson(request));
   } catch (error) {
-    if (error instanceof CheckoutValidationError) return fail(error.message, error.status);
-    return fail("Datos de pedido invalidos", 400);
+    if (error instanceof CheckoutValidationError) return fail(error.message, error.status, rate.source);
+    return fail("Datos de pedido invalidos", 400, rate.source);
   }
 
   try {

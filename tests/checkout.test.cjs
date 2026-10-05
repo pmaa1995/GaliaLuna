@@ -114,7 +114,7 @@ function loadRoute({ catalog = [product], persisted = true, catalogError = false
     "../../../../lib/catalogData": { getCheckoutProducts: async () => { if (catalogError) throw new Error("offline"); return catalog; } },
     "../../../../lib/orders/repository": { createWhatsAppOrderRecord: save || (async () => ({ persisted, orderCode: persisted ? "GL-TEST" : null })) },
     "../../../../lib/orders/validation": validation,
-    "../../../../lib/server/rateLimit": { consumeOrderRateLimit: async () => ({ allowed, remaining: null, retryAfterSeconds: 60 }) },
+    "../../../../lib/server/rateLimit": { consumeOrderRateLimit: async () => ({ allowed, remaining: null, retryAfterSeconds: 60, source: "local" }) },
   });
 }
 function request(body) {
