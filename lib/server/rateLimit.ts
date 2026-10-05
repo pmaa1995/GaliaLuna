@@ -1,3 +1,5 @@
+import { getCloudflareContext } from "@opennextjs/cloudflare";
+
 type RateLimitBucket = {
   count: number;
   resetAt: number;
@@ -80,7 +82,6 @@ export function consumeRateLimit(
 
 async function getOrdersRateLimiter(): Promise<RateLimiterBinding | null> {
   try {
-    const { getCloudflareContext } = await import("@opennextjs/cloudflare");
     const { env } = await getCloudflareContext({ async: true });
     return (env as { ORDERS_RATE_LIMITER?: RateLimiterBinding }).ORDERS_RATE_LIMITER ?? null;
   } catch {

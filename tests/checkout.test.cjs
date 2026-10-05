@@ -356,3 +356,21 @@ test("client rejects HTTP failure, unpersisted response and malformed JSON befor
     .saveOrderBeforeWhatsApp({ items: [item], values: customer, source: "cart" });
   assert.equal(success.ok, true);
 });
+
+test("order rate limiting uses the Cloudflare binding and falls back to memory", async () => {
+  const calls = [];
+  const withBinding = load("lib/server/rateLimit.ts", {
+    "@opennextjs/cloudflare": { getCloudflareContext: async () => ({ env: { ORDERS_RATE_LIMITER: { limit: async ({ key }) => { calls.push(key); return { success: calls.length <= 2 }; } } } }) },
+  });
+  const options = { limit: 8, windowMs: 60_000 };
+  assert.equal((await withBinding.consumeOrderRateLimit("orders:ip", options)).allowed, true);
+  assert.equal((await withBinding.consumeOrderRateLimit("orders:ip", options)).allowed, true);
+  assert.equal((await withBinding.consumeOrderRateLimit("orders:ip", options)).allowed, false);
+  assert.deepEqual(calls, ["orders:ip", "orders:ip", "orders:ip"]);
+  const withoutBinding = load("lib/server/rateLimit.ts", {
+    "@opennextjs/cloudflare": { getCloudflareContext: async () => { throw new Error("no context"); } },
+  });
+  const results = [];
+  for (let i = 0; i < 3; i++) results.push((await withoutBinding.consumeOrderRateLimit("orders:ip", { limit: 2, windowMs: 60_000 })).allowed);
+  assert.deepEqual(results, [true, true, false]);
+});
