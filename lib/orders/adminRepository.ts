@@ -138,8 +138,22 @@ function toPositiveInt(value: number | undefined, fallback: number) {
   return Math.max(1, Math.floor(value ?? fallback));
 }
 
+// Pending orders older than this most likely never reached WhatsApp.
+export const STALE_PENDING_HOURS = 48;
+
+export type AdminStatusFilter = OrderStatus | "all" | "stale";
+
+// D1 CURRENT_TIMESTAMP format ("YYYY-MM-DD HH:MM:SS", UTC), so the comparison stays a plain string compare.
+function stalePendingCutoff(now = Date.now()) {
+  return new Date(now - STALE_PENDING_HOURS * 60 * 60 * 1000).toISOString().replace("T", " ").slice(0, 19);
+}
+
+export function isStalePending(order: Pick<AdminOrderSummary, "status" | "createdAt">, now = Date.now()) {
+  return order.status === "pending_confirmation" && order.createdAt.replace("T", " ").slice(0, 19) <= stalePendingCutoff(now);
+}
+
 function buildAdminOrderFilters(options?: {
-  status?: OrderStatus | "all";
+  status?: AdminStatusFilter;
   q?: string;
 }) {
   const q = (options?.q ?? "").trim();
@@ -148,7 +162,10 @@ function buildAdminOrderFilters(options?: {
   const filters: string[] = [];
   const bindValues: unknown[] = [];
 
-  if (status !== "all") {
+  if (status === "stale") {
+    filters.push("status = 'pending_confirmation'", "created_at <= ?");
+    bindValues.push(stalePendingCutoff());
+  } else if (status !== "all") {
     filters.push("status = ?");
     bindValues.push(status);
   }
@@ -166,7 +183,7 @@ function buildAdminOrderFilters(options?: {
 }
 
 export async function listOrdersForAdminPage(options?: {
-  status?: OrderStatus | "all";
+  status?: AdminStatusFilter;
   q?: string;
   page?: number;
   pageSize?: number;
@@ -238,7 +255,7 @@ export async function listOrdersForAdminPage(options?: {
 }
 
 export async function listOrdersForAdmin(options?: {
-  status?: OrderStatus | "all";
+  status?: AdminStatusFilter;
   q?: string;
   limit?: number;
 }) {
@@ -576,4 +593,14 @@ export async function listOrdersForExport(): Promise<{ orders: AdminOrderDetail[
       lineTotal: Number(row.line_total),
     })),
   };
+}
+
+export async function countStalePendingOrders() {
+  const db = await getOrdersDb();
+  if (!db) return 0;
+  const row = await db
+    .prepare(`SELECT COUNT(*) AS total FROM orders WHERE status = 'pending_confirmation' AND created_at <= ?`)
+    .bind(stalePendingCutoff())
+    .first<CountRow>();
+  return Number(row?.total ?? 0);
 }

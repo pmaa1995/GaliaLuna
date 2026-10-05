@@ -11,11 +11,14 @@ type RateLimitOptions = {
 
 type RateLimitResult = {
   allowed: boolean;
-  remaining: number;
+  // Unknown when Cloudflare's shared limiter answered.
+  remaining: number | null;
   retryAfterSeconds: number;
 };
 
-// Best-effort in-memory limiter for Workers/Node runtimes.
+type RateLimiterBinding = { limit: (options: { key: string }) => Promise<{ success: boolean }> };
+
+// Fallback in-memory limiter, used when the Cloudflare binding is unavailable (local development).
 // It won't be globally consistent across isolates, but it is cheap and
 // significantly reduces accidental spam and abusive bursts.
 const buckets = new Map<string, RateLimitBucket>();
@@ -75,3 +78,24 @@ export function consumeRateLimit(
   };
 }
 
+async function getOrdersRateLimiter(): Promise<RateLimiterBinding | null> {
+  try {
+    const { getCloudflareContext } = await import("@opennextjs/cloudflare");
+    const { env } = await getCloudflareContext({ async: true });
+    return (env as { ORDERS_RATE_LIMITER?: RateLimiterBinding }).ORDERS_RATE_LIMITER ?? null;
+  } catch {
+    return null;
+  }
+}
+
+// Order creation uses Cloudflare's Rate Limiting binding (wrangler.jsonc, 60 s window) when deployed.
+export async function consumeOrderRateLimit(key: string, options: RateLimitOptions): Promise<RateLimitResult> {
+  const limiter = await getOrdersRateLimiter();
+  if (!limiter) return consumeRateLimit(key, options);
+  try {
+    const { success } = await limiter.limit({ key });
+    return { allowed: success, remaining: null, retryAfterSeconds: 60 };
+  } catch {
+    return consumeRateLimit(key, options);
+  }
+}

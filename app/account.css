@@ -146,6 +146,12 @@ a.acct-order:hover .acct-order-code { text-decoration:underline; text-underline-
 .adm-check { display:flex; min-height:44px; padding-top:1px; cursor:pointer; }
 .adm-check input { width:20px; height:20px; accent-color:var(--ink); }
 
+.adm-alert { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px 20px; margin:0 0 22px; padding:14px 16px; border-left:2px solid var(--brand-coral); background:#fbf3f1; font-size:13px; line-height:1.6; }
+.adm-alert a { flex-shrink:0; font-weight:500; text-decoration:underline; text-underline-offset:4px; }
+.adm-order-link p.adm-stale { margin-top:2px; font-size:12px; color:#7a3129; }
+.adm-restore { display:flex; flex-basis:100%; align-items:center; gap:8px; min-height:40px; font-size:12px; cursor:pointer; }
+.adm-restore input { width:18px; height:18px; accent-color:var(--ink); }
+
 @media (max-width:1023px) {
   .acct-grid, .acct-detail-grid { grid-template-columns:minmax(0,1fr); gap:44px; }
   .adm-layout { grid-template-columns:minmax(0,1fr); gap:28px; }

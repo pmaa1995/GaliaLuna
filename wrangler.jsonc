@@ -35,6 +35,14 @@
 	"images": {
 		"binding": "IMAGES"
 	},
+	// Shared across Worker isolates in each Cloudflare location; protects order creation from bursts.
+	"ratelimits": [
+		{
+			"name": "ORDERS_RATE_LIMITER",
+			"namespace_id": "1001",
+			"simple": { "limit": 8, "period": 60 }
+		}
+	],
 	"d1_databases": [
 		{
 			"binding": "GALIA_LUNA_DB",

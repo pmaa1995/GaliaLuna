@@ -2,11 +2,14 @@ import AdminOrdersView from "../../../components/admin/AdminOrdersView";
 import StoreShell from "../../../components/store/StoreShell";
 import { requireAdminUser } from "../../../lib/admin/auth";
 import {
+  countStalePendingOrders,
   getAdminMonthlySummary,
   getOrderDetailByCode,
   listOrdersForAdminPage,
+  type AdminStatusFilter,
 } from "../../../lib/orders/adminRepository";
 import { ORDER_STATUS_VALUES, type OrderStatus } from "../../../lib/orders/types";
+import { STALE_STATUS_PARAM } from "../../../components/admin/AdminOrdersView";
 
 type PageSearchParams = {
   estado?: string | string[];
@@ -22,8 +25,9 @@ function pickFirst(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
 
-function parseStatusFilter(value: string | undefined): OrderStatus | "all" {
+function parseStatusFilter(value: string | undefined): AdminStatusFilter {
   if (!value) return "all";
+  if (value === STALE_STATUS_PARAM) return "stale";
   return (ORDER_STATUS_VALUES as readonly string[]).includes(value)
     ? (value as OrderStatus)
     : "all";
@@ -49,7 +53,7 @@ export default async function AdminOrdersPage({
   const selecting = pickFirst(resolvedSearchParams?.seleccionar) === "1";
 
   // Light D1 reads in parallel: the page, the open order and one grouped query for the summary.
-  const [ordersPage, selectedOrder, months] = await Promise.all([
+  const [ordersPage, selectedOrder, months, staleCount] = await Promise.all([
     listOrdersForAdminPage({
       status: statusFilter,
       q,
@@ -58,6 +62,7 @@ export default async function AdminOrdersPage({
     }),
     selectedOrderCode ? getOrderDetailByCode(selectedOrderCode) : Promise.resolve(null),
     selecting ? Promise.resolve([]) : getAdminMonthlySummary(12),
+    countStalePendingOrders(),
   ]);
 
   return (
@@ -79,6 +84,7 @@ export default async function AdminOrdersPage({
         selectedOrder={selectedOrder}
         months={months}
         selecting={selecting}
+        staleCount={staleCount}
       />
     </StoreShell>
   );

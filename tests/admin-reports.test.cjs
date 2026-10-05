@@ -11,7 +11,7 @@ function load(file, dependencies = {}) {
   }).outputText;
   const loaded = { exports: {} };
   vm.runInNewContext(code, {
-    module: loaded, exports: loaded.exports, TextEncoder, Uint8Array, Uint32Array, DataView, ArrayBuffer, Intl, Date,
+    module: loaded, exports: loaded.exports, TextEncoder, Uint8Array, Uint32Array, DataView, ArrayBuffer, Intl, Date, crypto: require("node:crypto").webcrypto,
     require(name) {
       if (name in dependencies) return dependencies[name];
       throw new Error(`Unexpected dependency ${name}`);
@@ -71,4 +71,42 @@ test("stored D1 timestamps are read as UTC and shown in store time", () => {
   assert.equal(parseStoredDate("2026-09-18 16:23:00").toISOString(), "2026-09-18T16:23:00.000Z");
   assert.equal(formatStoreDateTimeISO("2026-09-18 16:23:00"), "2026-09-18 12:23");
   assert.equal(formatMonthLabel("2026-10"), "octubre de 2026");
+});
+
+test("pending orders older than 48 hours are flagged as stale", () => {
+  const { isStalePending, STALE_PENDING_HOURS } = load("lib/orders/adminRepository.ts", { "@opennextjs/cloudflare": { getCloudflareContext: async () => ({ env: {} }) } });
+  const now = Date.parse("2026-10-05T12:00:00Z");
+  assert.equal(STALE_PENDING_HOURS, 48);
+  assert.equal(isStalePending({ status: "pending_confirmation", createdAt: "2026-10-03 11:59:00" }, now), true);
+  assert.equal(isStalePending({ status: "pending_confirmation", createdAt: "2026-10-03 12:01:00" }, now), false);
+  assert.equal(isStalePending({ status: "confirmed", createdAt: "2026-09-01 10:00:00" }, now), false);
+});
+
+test("cancelled orders give stock back once, and only if it was taken", async () => {
+  function fakeSanity({ adjusted, restored, inventory = 3 }) {
+    const committed = [];
+    const client = {
+      fetch: async () => ({ adjusted: adjusted ? { _id: "a" } : null, restored: restored ? { _id: "r" } : null, products: [{ _id: "p1", _rev: "rev1", inventory }] }),
+      transaction() {
+        const ops = [];
+        const tx = {
+          create: (doc) => { ops.push(["create", doc._type]); return tx; },
+          patch: (id, fn) => { const patch = { ifRevisionId: (rev) => { ops.push(["rev", id, rev]); return patch; }, inc: (value) => { ops.push(["inc", id, value]); return patch; } }; fn(patch); return tx; },
+          commit: async () => { committed.push(ops); },
+        };
+        return tx;
+      },
+    };
+    return { client, committed };
+  }
+  const order = { orderCode: "GL-20260918-365", items: [{ productId: "p1", quantity: 2 }, { productId: "p1", quantity: 1 }] };
+  for (const [state, expectCommit] of [[{ adjusted: false }, false], [{ adjusted: true, restored: true }, false], [{ adjusted: true }, true]]) {
+    const { client, committed } = fakeSanity(state);
+    const { restoreSanityInventoryForOrder } = load("lib/orders/inventorySync.ts", { "../../sanity/lib/writeClient": { sanityWriteClient: client } });
+    const result = await restoreSanityInventoryForOrder(order);
+    assert.equal(result.ok, true);
+    assert.equal(committed.length, expectCommit ? 1 : 0, JSON.stringify(state));
+    // Objects built inside the vm context have another realm's prototypes; compare by content.
+    if (expectCommit) assert.equal(JSON.stringify(committed[0]), JSON.stringify([["create", "orderInventoryRestore"], ["rev", "p1", "rev1"], ["inc", "p1", { inventory: 3 }]]));
+  }
 });

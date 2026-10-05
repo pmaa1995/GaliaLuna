@@ -2,7 +2,8 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight, MessageCircle, Phone, Search, X } from "lucide-react";
 
 import { deleteOrdersAction, retryInventoryAdjustmentAction, updateAdminOrderStatusAction } from "../../app/admin/pedidos/actions";
-import type { AdminMonthSummary } from "../../lib/orders/adminRepository";
+import { isStalePending, type AdminMonthSummary, type AdminStatusFilter } from "../../lib/orders/adminRepository";
+import { parseStoredDate } from "../../lib/orders/dates";
 import { getAllowedNextStatuses } from "../../lib/orders/status";
 import {
   ORDER_STATUS_LABELS,
@@ -17,6 +18,7 @@ import AdminSalesSummary from "./AdminSalesSummary";
 import SelectAllOrders from "./SelectAllOrders";
 
 const BULK_FORM_ID = "adm-bulk";
+export const STALE_STATUS_PARAM = "sin-respuesta";
 
 // Buttons name the action, not the resulting state.
 const STATUS_ACTION_LABELS: Record<OrderStatus, string> = {
@@ -37,10 +39,10 @@ const STATUS_FILTER_LABELS: Record<OrderStatus, string> = {
   cancelled: "Cancelados",
 };
 
-export function buildAdminOrdersHref(params: { status: OrderStatus | "all"; q: string; page?: number; selectedOrderCode?: string; selecting?: boolean }) {
+export function buildAdminOrdersHref(params: { status: AdminStatusFilter; q: string; page?: number; selectedOrderCode?: string; selecting?: boolean }) {
   const search = new URLSearchParams();
   if (params.selecting) search.set("seleccionar", "1");
-  if (params.status !== "all") search.set("estado", params.status);
+  if (params.status !== "all") search.set("estado", params.status === "stale" ? STALE_STATUS_PARAM : params.status);
   if (params.q.trim()) search.set("q", params.q.trim());
   if (params.page && params.page > 1) search.set("page", String(params.page));
   if (params.selectedOrderCode) search.set("pedido", params.selectedOrderCode);
@@ -82,8 +84,17 @@ function StatusActions({ order, returnTo }: { order: AdminOrderSummary; returnTo
   </>;
 }
 
+function needsInventoryRetry(order: AdminOrderSummary) {
+  return (order.status === "confirmed" && !order.inventoryAdjustedAt) || (order.status === "cancelled" && Boolean(order.inventoryAdjustedAt));
+}
+
 function InventoryNote({ order }: { order: AdminOrderSummary | AdminOrderDetail }) {
   if (order.status === "pending_confirmation") return <p className="adm-note">El inventario se descuenta al confirmar.</p>;
+  if (order.status === "cancelled") {
+    return order.inventoryAdjustedAt
+      ? <p className="adm-note adm-note--warn">Piezas por devolver al inventario{order.inventoryAdjustmentError ? `: ${order.inventoryAdjustmentError}` : "."}</p>
+      : null;
+  }
   if (order.status !== "confirmed") return null;
   if (order.inventoryAdjustedAt) return <p className="adm-note">Inventario ajustado el {formatAccountOrderDateTime(order.inventoryAdjustedAt)}.</p>;
   return <p className="adm-note adm-note--warn">Inventario pendiente{order.inventoryAdjustmentError ? `: ${order.inventoryAdjustmentError}` : "."}</p>;
@@ -107,11 +118,11 @@ function OrderDetail({ order, returnTo, closeHref }: { order: AdminOrderDetail; 
       </div>
       <div className="adm-actions">
         <StatusActions order={order} returnTo={returnTo} />
-        {order.status === "confirmed" && !order.inventoryAdjustedAt ? (
+        {needsInventoryRetry(order) ? (
           <form action={retryInventoryAdjustmentAction}>
             <input type="hidden" name="orderId" value={order.id} />
             <input type="hidden" name="returnTo" value={returnTo} />
-            <button type="submit" className="adm-btn">Reintentar inventario</button>
+            <button type="submit" className="adm-btn">{order.status === "cancelled" ? "Devolver al inventario" : "Reintentar inventario"}</button>
           </form>
         ) : null}
       </div>
@@ -157,14 +168,20 @@ export interface AdminOrdersViewProps {
   pageSize: number;
   hasPreviousPage: boolean;
   hasNextPage: boolean;
-  statusFilter: OrderStatus | "all";
+  statusFilter: AdminStatusFilter;
   q: string;
   selectedOrder: AdminOrderDetail | null;
   months: AdminMonthSummary[];
   selecting: boolean;
+  staleCount: number;
 }
 
-export default function AdminOrdersView({ adminEmail, orders, total, page, pageSize, hasPreviousPage, hasNextPage, statusFilter, q, selectedOrder, months, selecting }: AdminOrdersViewProps) {
+function daysSince(value: string) {
+  return Math.max(1, Math.floor((Date.now() - parseStoredDate(value).getTime()) / 86_400_000));
+}
+
+export default function AdminOrdersView({ adminEmail, orders, total, page, pageSize, hasPreviousPage, hasNextPage, statusFilter, q, selectedOrder, months, selecting, staleCount }: AdminOrdersViewProps) {
+  const filterLabel = statusFilter === "stale" ? "sin respuesta hace más de 2 días" : statusFilter === "all" ? "" : ORDER_STATUS_LABELS[statusFilter].toLocaleLowerCase("es");
   const listHref = buildAdminOrdersHref({ status: statusFilter, q, page });
   const detailHref = (orderCode: string) => `${buildAdminOrdersHref({ status: statusFilter, q, page, selectedOrderCode: orderCode })}#detalle`;
   const selectedReturnTo = selectedOrder ? buildAdminOrdersHref({ status: statusFilter, q, page, selectedOrderCode: selectedOrder.orderCode }) : listHref;
@@ -180,6 +197,13 @@ export default function AdminOrdersView({ adminEmail, orders, total, page, pageS
       </header>
 
       {selecting ? null : <AdminSalesSummary months={months} />}
+
+      {staleCount > 0 && statusFilter !== "stale" ? (
+        <p className="adm-alert">
+          <span>{staleCount} {staleCount === 1 ? "pedido lleva" : "pedidos llevan"} más de 2 días sin confirmar. Probablemente no llegaron a enviar el WhatsApp.</span>
+          <Link href={buildAdminOrdersHref({ status: "stale", q: "" })}>Revisar</Link>
+        </p>
+      ) : null}
 
       <div className="adm-filters">
         <form method="GET" action="/admin/pedidos" className="adm-search" role="search">
@@ -197,7 +221,7 @@ export default function AdminOrdersView({ adminEmail, orders, total, page, pageS
         </nav>
       </div>
       <div className="adm-summary">
-        <span>{total} {total === 1 ? "pedido" : "pedidos"}{statusFilter !== "all" ? ` · ${ORDER_STATUS_LABELS[statusFilter].toLocaleLowerCase("es")}` : ""}{q ? ` · «${q}»` : ""}</span>
+        <span>{total} {total === 1 ? "pedido" : "pedidos"}{filterLabel ? ` · ${filterLabel}` : ""}{q ? ` · «${q}»` : ""}</span>
         <span className="adm-summary-links">
           {q || statusFilter !== "all" ? <Link href={buildAdminOrdersHref({ status: "all", q: "", selecting })}>Quitar filtros</Link> : null}
           {orders.length ? <Link href={buildAdminOrdersHref({ status: statusFilter, q, page, selecting: !selecting })}>{selecting ? "Listo" : "Seleccionar"}</Link> : null}
@@ -211,7 +235,8 @@ export default function AdminOrdersView({ adminEmail, orders, total, page, pageS
           <SelectAllOrders formId={BULK_FORM_ID} />
           <details className="adm-cancel">
             <summary className="adm-btn adm-btn--danger"><span className="adm-cancel-open">Eliminar seleccionados</span><span className="adm-cancel-close">No eliminar</span></summary>
-            <span>Se borrarán para siempre, con sus piezas. El inventario no se devuelve.</span>
+            <span>Se borrarán para siempre.</span>
+            <label className="adm-restore"><input type="checkbox" name="restoreInventory" value="1" /> Devolver sus piezas al inventario (para pedidos de prueba)</label>
             <button type="submit" className="adm-btn adm-btn--confirm">Sí, eliminar</button>
           </details>
         </form>
@@ -235,6 +260,7 @@ export default function AdminOrdersView({ adminEmail, orders, total, page, pageS
                   <p className="adm-order-name">{order.fullName}</p>
                   <p>{order.phone} · {order.city}, {order.province}</p>
                   <p>{formatAccountOrderDateTime(order.createdAt)} · {formatPieces(order.itemCount)} · {formatDOP(order.subtotalAmount)}</p>
+                  {isStalePending(order) ? <p className="adm-stale">Sin respuesta hace {daysSince(order.createdAt)} días</p> : null}
                 </Link>
                 {selecting ? null : (
                   <div className="adm-actions">
@@ -242,7 +268,7 @@ export default function AdminOrdersView({ adminEmail, orders, total, page, pageS
                     <WhatsAppButton order={order} />
                   </div>
                 )}
-                {!selecting && order.status === "confirmed" && !order.inventoryAdjustedAt ? <InventoryNote order={order} /> : null}
+                {!selecting && needsInventoryRetry(order) ? <InventoryNote order={order} /> : null}
               </article>
             );
           })}

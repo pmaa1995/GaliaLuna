@@ -6,7 +6,7 @@ import { createWhatsAppOrderRecord } from "../../../../lib/orders/repository";
 import {
   CheckoutValidationError, MAX_CHECKOUT_BODY_BYTES, parseCheckoutPayload, validateCheckoutCatalog,
 } from "../../../../lib/orders/validation";
-import { consumeRateLimit } from "../../../../lib/server/rateLimit";
+import { consumeOrderRateLimit } from "../../../../lib/server/rateLimit";
 import type { CreateWhatsAppOrderResponse } from "../../../../lib/orders/types";
 
 function getClientIp(request: Request) {
@@ -56,7 +56,7 @@ async function readLimitedJson(request: Request): Promise<unknown> {
 }
 
 export async function POST(request: Request) {
-  const rate = consumeRateLimit(`orders:whatsapp:${getClientIp(request)}`, {
+  const rate = await consumeOrderRateLimit(`orders:whatsapp:${getClientIp(request)}`, {
     limit: 8, windowMs: 60_000,
   });
   if (!rate.allowed) {
@@ -64,7 +64,6 @@ export async function POST(request: Request) {
       { ok: false, persisted: false, orderCode: null, error: "Demasiados intentos. Intenta de nuevo en un momento." },
       { status: 429, headers: {
         "Retry-After": String(rate.retryAfterSeconds),
-        "X-RateLimit-Remaining": String(rate.remaining),
         "Cache-Control": "no-store",
       } },
     );
@@ -100,7 +99,7 @@ export async function POST(request: Request) {
     }
     return NextResponse.json<CreateWhatsAppOrderResponse>(
       { ok: true, persisted: true, orderCode: result.orderCode },
-      { headers: { "X-RateLimit-Remaining": String(rate.remaining), "Cache-Control": "no-store" } },
+      { headers: { "Cache-Control": "no-store" } },
     );
   } catch {
     console.error("WhatsApp order persistence failed");

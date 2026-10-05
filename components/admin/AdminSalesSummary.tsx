@@ -6,6 +6,7 @@ import { formatDOP } from "../../types/product";
 
 const capitalize = (text: string) => text.charAt(0).toLocaleUpperCase("es") + text.slice(1);
 const orders = (count: number) => `${count} ${count === 1 ? "pedido" : "pedidos"}`;
+const confirmed = (count: number) => `${count} ${count === 1 ? "pedido confirmado" : "pedidos confirmados"}`;
 
 // Three figures at a glance; the yearly breakdown stays folded until asked for.
 export default function AdminSalesSummary({ months }: { months: AdminMonthSummary[] }) {
@@ -27,7 +28,7 @@ export default function AdminSalesSummary({ months }: { months: AdminMonthSummar
         <div>
           <dt>Vendido este mes</dt>
           <dd>{formatDOP(current.soldAmount)}</dd>
-          <p>{orders(current.soldOrders)} confirmados</p>
+          <p>{confirmed(current.soldOrders)}</p>
         </div>
         <div>
           <dt>Por confirmar</dt>
@@ -38,7 +39,7 @@ export default function AdminSalesSummary({ months }: { months: AdminMonthSummar
           <div>
             <dt>{capitalize(formatMonthLabel(previous.month))}</dt>
             <dd>{formatDOP(previous.soldAmount)}</dd>
-            <p>{orders(previous.soldOrders)} confirmados</p>
+            <p>{confirmed(previous.soldOrders)}</p>
           </div>
         ) : null}
       </dl>
